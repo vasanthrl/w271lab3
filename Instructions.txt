@@ -1,0 +1,39 @@
+## Instructions (Please Read Carefully):
+
+* $\textbf{Due 11:59pm Sunday April 18 2020}$
+
+* 20 page limit (strict)
+
+* Do not modify fontsize, margin or line-spacing settings
+
+* One student from each group should submit the lab to their student github repo by the deadline
+
+* **Submissions and revisions made after the deadline will not be graded**
+
+* Submit two files:
+    
+    1. A pdf file that details your answers. Include all R code used to produce the answers
+    
+    2. The R markdown (Rmd) file used to produce the pdf file
+  
+    The assignment will not be graded unless **both** files are submitted
+      
+* Name your files to include all group members names. For example, if the students' names are Stan Cartman and Kenny Kyle, name your files as follows:
+
+    * `StanCartman_KennyKyle_Lab3.Rmd`
+    * `StanCartman_KennyKyle_Lab3.pdf`
+            
+* Although it sounds obvious, please write your name on page 1 of your pdf and Rmd files
+
+* All answers should include a detailed narrative; make sure that your audience can easily follow the logic of your analysis. All steps used in modelling must be clearly shown and explained; do not simply 'output dump' the results of code without explanation 
+
+* If you use libraries and functions for statistical modeling that we have not covered in this course, you must provide an explanation of why such libraries and functions are used and reference the library documentation
+
+* For mathematical formulae, type them in your R markdown file. Do not e.g. write them on a piece of paper, snap a photo, and use the image file
+
+* Incorrectly following submission instructions results in deduction of grades
+
+* Students are expected to act with regard to UC Berkeley Academic Integrity.
+
+
+\newpage
