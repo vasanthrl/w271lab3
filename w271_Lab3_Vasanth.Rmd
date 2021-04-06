@@ -1,0 +1,185 @@
+---
+title: 'Statistical Methods for Discrete Response, Time Series, and Panel Data (W271): Group Lab 3'
+geometry: margin=1in
+output:
+  pdf_document:
+    latex_engine: xelatex
+  number_sections: yes
+  html_document: default
+  toc: yes
+fontsize: 11pt
+---
+
+# U.S. traffic fatalities: 1980-2004
+
+In this lab, you are asked to answer the question **"Do changes in traffic laws affect traffic fatalities?"**  To do so, you will conduct the tasks specified below using the data set *driving.Rdata*, which includes 25 years of data that cover changes in various state drunk driving, seat belt, and speed limit laws. 
+
+Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is come with the dataste.
+
+```{r, warning=FALSE, message=FALSE}
+# Import libraries
+library(ggplot2)
+library(gridExtra)
+```
+
+**Exercises:**
+
+1. (30%) Load the data. Provide a description of the basic structure of the dataset, as we have done throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive a zero in this exercise.*
+
+
+### 1.1 Description of the dataset:
+
+The dataset consists of 1200 rows and 56 columns. The data is from 1980 through 2004 and has 48 continental U.S states numbered from 1-51 with 3 states missing.For each state we have data state traffic laws,  
+
+```{r}
+# Clean up the work space before we begin
+rm(list = ls())
+
+load("./driving.Rdata")
+drivingdf <- data
+dim(drivingdf)
+head(drivingdf)
+tail(drivingdf)
+
+```
+
+```{r}
+table(drivingdf$year)
+
+```
+
+
+```{r}
+str(drivingdf)
+```
+
+**Speed Limit Variables**
+
+```{r}
+unique(drivingdf$sl55)
+unique(drivingdf$sl65)
+unique(drivingdf$sl70)
+unique(drivingdf$sl75)
+unique(drivingdf$sl70plus)
+unique(drivingdf$slnone)
+unique(drivingdf$seatbelt)
+```
+
+**Drinking**
+```{r}
+unique(drivingdf$minage)
+unique(drivingdf$zerotol)
+unique(drivingdf$bac10)
+unique(drivingdf$bac08)
+unique(drivingdf$perse)
+```
+**Seatbelt**
+
+```{r}
+unique(drivingdf$seatbelt)
+unique(drivingdf$sbprim)
+unique(drivingdf$sbsecon)
+```
+
+**Fatality**
+
+```{r}
+totfat     
+nghtfat     
+wkndfat  
+totfatpvm
+nghtfatpvm
+wkndfatpvm
+totfatrte 
+nghtfatrte
+wkndfatrte 
+```
+
+**Demographic variables**
+
+```{r}
+statepop
+vehicmiles
+unem
+perc14_24
+```
+
+
+### Data description
+**year**  - Years ranging from 1980 -2004
+**state** - There are 48 states with numbers from 1-51 with 3 numbers missing
+**Speed Limit Variables** - sl55, sl65, sl70, sl75 and slnone  
+
+
+```{r}
+#Univariate analysis
+
+hist1 <- ggplot(drivingdf, aes((totfat))) + geom_bar(fill="green") 
+
+hist2 <- ggplot(drivingdf, aes((nghtfat))) + geom_bar(fill="green")
+
+hist3 <- ggplot(drivingdf, aes((wkndfat))) + geom_bar(fill="green")
+
+hist4 <- ggplot(drivingdf, aes((totfatpvm))) + geom_bar(fill="green")
+
+hist5 <- ggplot(drivingdf, aes((nghtfatpvm))) + geom_bar(fill="green")
+
+hist6 <- ggplot(drivingdf, aes((wkndfatpvm))) + geom_bar(fill="green")
+
+hist7 <- ggplot(drivingdf, aes((totfatrte))) + geom_bar(fill="green")
+
+hist8 <- ggplot(drivingdf, aes((nghtfatrte))) + geom_bar(fill="green")
+
+hist9 <- ggplot(drivingdf, aes((wkndfatrte))) + geom_bar(fill="green")
+
+grid.arrange(hist1, hist2, hist3, hist4, hist5, hist6, hist7, hist8, hist9, nrow = 3, ncol = 3, top="Fatalities")
+
+
+```
+
+```{r}
+#bi variate analysis
+boxplot1 <- ggplot(drivingdf, aes(x = year, y = totfat, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+boxplot2 <- ggplot(drivingdf, aes(x = year, y = nghtfat, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+boxplot3 <- ggplot(drivingdf, aes(x = year, y = wkndfat, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+boxplot4 <- ggplot(drivingdf, aes(x = year, y = totfatpvm, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+boxplot5 <- ggplot(drivingdf, aes(x = year, y = nghtfatpvm, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+boxplot6 <- ggplot(drivingdf, aes(x = year, y = wkndfatpvm, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+boxplot7 <- ggplot(drivingdf, aes(x = year, y = totfatrte, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+boxplot8 <- ggplot(drivingdf, aes(x = year, y = nghtfatrte, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+boxplot9 <- ggplot(drivingdf, aes(x = year, y = wkndfatrte, fill = year)) + geom_boxplot(aes(fill = year, group = year), show.legend = FALSE)
+
+grid.arrange(boxplot1, boxplot2, boxplot3, boxplot4, boxplot5, boxplot6, boxplot7, boxplot8, boxplot9, nrow = 3, ncol = 3, top="Fatalities by Year")
+
+```
+
+
+2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
+
+
+```{r}
+
+```
+
+3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
+
+4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
+
+5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
+
+6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
+
+7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
+
+
+
+
+
+
+
+
+
+
+
+
+
