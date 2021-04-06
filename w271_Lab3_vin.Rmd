@@ -1,0 +1,234 @@
+---
+title: 'Statistical Methods for Discrete Response, Time Series, and Panel Data (W271): Group Lab 3'
+geometry: margin=1in
+output:
+  pdf_document:
+    latex_engine: xelatex
+  number_sections: yes
+  html_document: default
+  toc: yes
+fontsize: 11pt
+---
+
+# U.S. traffic fatalities: 1980-2004
+
+In this lab, you are asked to answer the question **"Do changes in traffic laws affect traffic fatalities?"**  To do so, you will conduct the tasks specified below using the data set *driving.Rdata*, which includes 25 years of data that cover changes in various state drunk driving, seat belt, and speed limit laws. 
+
+Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is come with the dataste.
+
+```{r common, warning=FALSE,message=FALSE}
+library(foreign) 
+library(gplots) 
+library(ggplot2) 
+library(stats) 
+library(Hmisc) 
+library(car) 
+library(dplyr) 
+#library(corrplot) 
+#library(corrgram) 
+library(lattice) 
+library(plm)
+```
+
+
+**Exercises:**
+
+1. (30%) Load the data. Provide a description of the basic structure of the dataset, as we have done throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive a zero in this exercise.*
+
+```{r 1 load, warning=FALSE,message=FALSE}
+#driving <- miceadds::load.Rdata2( filename="driving.Rdata")
+
+#load data
+load("driving.Rdata",ex <- new.env()) 
+
+#check the variables in the new environment
+ls.str(ex)
+
+#describe the variables 
+desc
+
+#examine the data
+data
+
+#check for nulls
+apply(data, 2, function(x) any(is.na(x)))
+
+#check for summary
+table(data$state)
+```
+The dataframe has 1200 observations, with 56 columns from year 1980 to 2004. The data has 25 observations each from 48 states except state ids 2 and 9. There are no missing data.
+
+Below we analyze the growth in fatalities over years by state
+```{r 1.EDA1,warning=FALSE,message=FALSE}
+ggplot(data, mapping = aes(x = year, y = totfatrte)) +
+  geom_line(aes(linetype = as.factor(state)))
+```
+
+```{r 1.EDA2,warning=FALSE,message=FALSE}
+
+coplot(totfatrte ~ year|state, type="l", data=data) # Lines
+coplot(totfatrte ~ year|state, type="b", data=data)
+
+scatterplot(totfatrte ~ year|state, boxplots=FALSE, smooth=TRUE, reg.line=FALSE, data=data)
+
+plotmeans(totfatrte ~ perse, main="Heterogeneity across States", data=data)
+
+plotmeans(totfatrte ~ year, main="Heterogeneity across Years", data=data)
+```
+
+```{r 1 EDA2,warning=FALSE,message=FALSE}
+# summarize the average statistics for speed limit in a data frame
+sl.df <- data %>% group_by(year) %>%
+summarise(sl55 = sum(sl55), sl65 = sum(sl65),sl75 = sum(sl75), slnone = sum(slnone))
+
+sl.plot <- ggplot(sl.df, aes(x = year)) +
+geom_line(aes(y = sl55, color='purple')) + geom_line(aes(y=sl65, color='green')) + geom_line(aes(y=sl75, color='blue')) + geom_line(aes(y=slnone), color='orange') + scale_x_continuous(breaks = seq(min(sl.df$year), max(sl.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5)) + scale_color_discrete(name="Speed Limit", labels=c("55", "65", "75", "none")) + labs(title = "Changes in speed limit law prevalence over time",
+y = "[%] states with given speed limit)",
+x = "")
+
+sl.plot 
+```
+
+```{r 1 EDA3}
+#fatality change by year 
+traffic.yearly.aggr <- data %>%
+  group_by(year) %>%
+  summarise_at(vars(totfat, nghtfat,wkndfat), funs(sum))
+
+ggplot(traffic.yearly.aggr, aes(year, totfat)) +
+  geom_bar(aes(fill = factor(year)), position = "dodge", stat="identity") + ggtitle("Fatalities by year") + theme_gray() + scale_fill_hue(c=45,l=80) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + 
+  geom_line(aes(x = year, y = nghtfat, color="red"), size = 1.5, group = 1) + 
+geom_line(aes(x = year, y = wkndfat, color="blue"), size = 1.5, group = 1) +
+scale_color_discrete(name = "Rates", labels = c("Night Fatality Rate", "Weekend Fatality Rate"))
+
+```
+
+```{r 1 EDA3}
+#fatality change by state 
+
+#get state name 
+us.states = read.csv("usstates.csv", header = TRUE, sep = ",", dec = ".")
+
+data.with.name <- merge(data, us.states, by=c("state","state"))
+
+traffic.state.aggr <- data.with.name %>%
+  group_by(shortname) %>%
+  summarise_at(vars(totfat, nghtfat,wkndfat), funs(sum))
+
+traffic.state.perc.aggr <- data.with.name %>%
+  group_by(shortname) %>%
+  summarise_at(vars(totfatrte, nghtfatrte,wkndfatrte), funs(mean))
+
+ggplot(traffic.state.perc.aggr, aes(shortname, totfatrte)) +
+  geom_bar(aes(fill = factor(shortname)), position = "dodge", stat="identity") + ggtitle("Fatalities by state") +    theme_gray() + 
+  scale_fill_hue(c=45,l=80) + theme(plot.title = element_text(size = 8, hjust = 0.5)) + 
+  theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
+  geom_line(aes(x = shortname, y = nghtfatrte, color="red"), size = 1.5, group = 1) + 
+geom_line(aes(x = shortname, y = wkndfatrte, color="blue"), size = 1.5, group = 1) +
+  scale_color_discrete(name = "Rates", labels = c("Night Fatality Rate", "Weekend Fatality Rate"))
+
+```
+
+```{r EDA4}
+
+library(ggnewscale)
+library(gridExtra)
+
+#get top and bottom states data, we'll compare these states for traffic law analyses
+library(viridis)
+top.5.fatalities <- traffic.state.perc.aggr %>%
+         filter(rank(desc(totfatrte))<=5) 
+
+bottom.5.fatalities <- traffic.state.perc.aggr %>%
+         filter(rank((totfatrte))<=5)
+
+data.top.filtered <- data.with.name %>% filter(shortname %in% c("AK","MS","NC","NM","SD"))
+data.bottom.filtered <- data.with.name %>% filter(shortname %in% c("CT","MI","NJ","NV","SC"))
+
+data.merged <- data.with.name %>% filter(shortname %in% c("AK","MS","NC","NM","SD","CT","MI","NJ","NV","SC"))
+
+top.plot.1 <- ggplot(data.top.filtered, aes(x = year, y = totfatrte, group = shortname, color = shortname)) +    scale_color_viridis(discrete = TRUE, option = "D") +  
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) + ggtitle("Fatalities by state") +
+  geom_line(aes(x = year,y=totfatrte)) + theme_gray() +
+  ggnewscale::new_scale_colour() + 
+  geom_point(aes(colour = factor(seatbelt))) + scale_color_discrete()
+
+bottom.plot.1 <- ggplot(data.bottom.filtered, aes(x = year, y = totfatrte, color = factor(shortname) )) + theme_gray() +
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) +  scale_color_viridis(discrete = TRUE) +  ggtitle("Fatalities by state") +   
+  geom_line(aes(x = year,y=totfatrte)) + 
+  ggnewscale::new_scale_colour() + 
+  geom_point(aes(colour = factor(seatbelt))) + scale_color_discrete()
+
+plot.1 <- ggplot(data.merged, aes(x = year, y = totfatrte, group = shortname, color = shortname)) + theme_gray() +
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) + scale_color_discrete(name = "State") + ggtitle("Fatalities by Top 5 and Bottom 5 states") +  
+  geom_line(aes(x = year,y=totfatrte)) + 
+  ggnewscale::new_scale_colour() + 
+  geom_point(aes(colour = factor(seatbelt))) + scale_color_viridis(discrete = TRUE, option = "D",name = "Seatbelt") 
+
+plot.1
+top.plot.1
+bottom.plot.1
+
+grid.arrange(plot.1, top.plot.1, bottom.plot.1, 
+             nrow = 3, heights = c(20,20,20), ncol = 1)
+
+```
+
+```{r}
+eda.states.chart <- function(fieldname) {
+  
+top.plot.1 <- ggplot(data.top.filtered, aes(x = year, y = totfatrte, group = shortname, color = shortname)) +    scale_color_viridis(discrete = TRUE, option = "D") +  
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) + ggtitle("Fatalities by state") +
+  geom_line(aes(x = year,y=totfatrte)) + theme_gray() +
+  ggnewscale::new_scale_colour() + 
+  geom_point(aes(colour = factor(get(fieldname)))) + scale_color_discrete(name = fieldname)
+
+bottom.plot.1 <- ggplot(data.bottom.filtered, aes(x = year, y = totfatrte, color = factor(shortname) )) + theme_gray() +
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) +  scale_color_viridis(discrete = TRUE) +  ggtitle("Fatalities by state") +   
+  geom_line(aes(x = year,y=totfatrte)) + 
+  ggnewscale::new_scale_colour() + 
+  geom_point(aes(colour = factor(get(fieldname)))) + scale_color_discrete( name = fieldname)
+
+plot.1 <- ggplot(data.merged, aes(x = year, y = totfatrte, group = shortname, color = shortname)) + theme_gray() +
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) + scale_color_discrete(name = "State") + ggtitle("Fatalities by Top 5 and Bottom 5 states") +  
+  geom_line(aes(x = year,y=totfatrte)) + 
+  ggnewscale::new_scale_colour() + 
+  geom_point(aes(colour = factor(get(fieldname)))) + scale_color_viridis(discrete = TRUE, option = "D",name = fieldname) 
+
+plot.1
+# top.plot.1
+# bottom.plot.1
+# 
+# grid.arrange(plot.1, top.plot.1, bottom.plot.1,
+#               nrow = 3, heights = c(20,20,20), ncol = 1)
+  
+}
+
+eda.states.chart("gdl")
+```
+
+
+2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
+
+3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
+
+4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
+
+5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
+
+6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
+
+7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
+
+
+
+
+
+
+
+
+
+
+
+
+
