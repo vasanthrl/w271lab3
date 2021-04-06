@@ -1,0 +1,109 @@
+---
+title: 'Statistical Methods for Discrete Response, Time Series, and Panel Data (W271): Group Lab 3'
+geometry: margin=1in
+output:
+  pdf_document:
+    latex_engine: xelatex
+  number_sections: yes
+  html_document: default
+  toc: yes
+fontsize: 11pt
+---
+```{r, warning=FALSE, message=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+# Load Libraries
+library(ggplot2)
+library(stargazer)
+library(tidyverse)
+library(patchwork)
+library(tsibble)
+library(fable)
+library(fpp2)
+library(fpp3)
+library(car)
+library(Hmisc)
+library(skimr)
+```
+
+```{r, warning=FALSE, message=FALSE}
+setwd("/home/jovyan/r_bridge/student_work/shagarwa/Lab#3")
+load("driving.RData")
+driving <- data
+desc
+options(scipen=999)
+```
+
+```{r, warning=FALSE, message=FALSE}
+names(driving)
+dim(driving)
+str(driving)
+summary(driving)
+describe(driving)
+glimpse(driving)
+skim(driving)
+
+driving.tsibble <- as_tsibble(driving, index = year, key = state)
+
+#Time Plot of Data
+driving.tsibble %>%
+  autoplot(totfatrte) +
+  facet_wrap(~state) +
+  theme(legend.position = "none") +
+  labs(
+    title = "Fatality Rate By State from 1980-2004",
+    subtitle = "United State of America",
+    y = "Total Fatality Rate",
+    x = "Time(Yearly)"
+    )
+
+driving.tsibble %>%
+  autoplot(seatbelt) + 
+  facet_wrap(~state) +
+  scale_x_discrete(breaks = NULL) +
+  scale_y_discrete(breaks = NULL)
+
+driving.tsibble %>%
+  ggplot(aes(x = factor(year), y = totfat)) +  
+  geom_boxplot(aes(fill = factor(year)))
+
+driving.tsibble %>% 
+  summarise("Fatality Rate Across USA" = mean(totfat)) %>% 
+  autoplot()
+```
+\newpage
+
+# U.S. traffic fatalities: 1980-2004
+
+In this lab, you are asked to answer the question **"Do changes in traffic laws affect traffic fatalities?"**  To do so, you will conduct the tasks specified below using the data set *driving.Rdata*, which includes 25 years of data that cover changes in various state drunk driving, seat belt, and speed limit laws. 
+
+Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is come with the dataste.
+
+**Exercises:**
+
+1. (30%) Load the data. Provide a description of the basic structure of the dataset, as we have done throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive a zero in this exercise.*
+
+2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
+
+3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
+
+4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
+
+5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
+
+6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
+
+7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
+
+
+
+
+
+
+
+
+
+
+
+
+
