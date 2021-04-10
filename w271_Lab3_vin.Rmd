@@ -45,7 +45,7 @@ load("driving.Rdata",ex <- new.env())
 ls.str(ex)
 
 #describe the variables 
-desc
+knitr::kable(desc)
 
 #examine the data
 data
@@ -56,7 +56,7 @@ apply(data, 2, function(x) any(is.na(x)))
 #check for summary
 table(data$state)
 ```
-The dataframe has 1200 observations, with 56 columns from year 1980 to 2004. The data has 25 observations each from 48 states except state ids 2 and 9. There are no missing data.
+The dataframe has 1200 observations, with 56 columns from year 1980 to 2004. The data has 25 observations each from 48 states except state ids 2,3 and 9. There are no missing data.
 
 Below we analyze the growth in fatalities over years by state
 ```{r 1.EDA1,warning=FALSE,message=FALSE}
@@ -142,10 +142,10 @@ top.5.fatalities <- traffic.state.perc.aggr %>%
 bottom.5.fatalities <- traffic.state.perc.aggr %>%
          filter(rank((totfatrte))<=5)
 
-data.top.filtered <- data.with.name %>% filter(shortname %in% c("AK","MS","NC","NM","SD"))
-data.bottom.filtered <- data.with.name %>% filter(shortname %in% c("CT","MI","NJ","NV","SC"))
+data.top.filtered <- data.with.name %>% filter(shortname %in% c("MS","MT","NM","SC","WY"))
+data.bottom.filtered <- data.with.name %>% filter(shortname %in% c("CT","MA","NJ","NY","RI"))
 
-data.merged <- data.with.name %>% filter(shortname %in% c("AK","MS","NC","NM","SD","CT","MI","NJ","NV","SC"))
+data.merged <- data.with.name %>% filter(shortname %in% c("MS","MT","NM","SC","WY","CT","MA","NJ","NY","RI"))
 
 top.plot.1 <- ggplot(data.top.filtered, aes(x = year, y = totfatrte, group = shortname, color = shortname)) +    scale_color_viridis(discrete = TRUE, option = "D") +  
   theme(plot.title = element_text(size = 10, hjust = 0.5)) + ggtitle("Fatalities by state") +
@@ -195,8 +195,8 @@ plot.1 <- ggplot(data.merged, aes(x = year, y = totfatrte, group = shortname, co
   ggnewscale::new_scale_colour() + 
   geom_point(aes(colour = factor(get(fieldname)))) + scale_color_viridis(discrete = TRUE, option = "D",name = fieldname) 
 
-plot.1
-# top.plot.1
+#plot.1
+top.plot.1
 # bottom.plot.1
 # 
 # grid.arrange(plot.1, top.plot.1, bottom.plot.1,
@@ -204,7 +204,7 @@ plot.1
   
 }
 
-eda.states.chart("gdl")
+eda.states.chart("bac08")
 ```
 
 
