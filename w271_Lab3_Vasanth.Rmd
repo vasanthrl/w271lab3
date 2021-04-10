@@ -37,6 +37,9 @@ rm(list = ls())
 
 load("./driving.Rdata")
 drivingdf <- data
+
+desc
+
 dim(drivingdf)
 head(drivingdf)
 tail(drivingdf)
@@ -45,7 +48,6 @@ tail(drivingdf)
 
 ```{r}
 table(drivingdf$year)
-
 ```
 
 
@@ -62,7 +64,6 @@ unique(drivingdf$sl70)
 unique(drivingdf$sl75)
 unique(drivingdf$sl70plus)
 unique(drivingdf$slnone)
-unique(drivingdf$seatbelt)
 ```
 
 **Drinking**
@@ -84,24 +85,24 @@ unique(drivingdf$sbsecon)
 **Fatality**
 
 ```{r}
-totfat     
-nghtfat     
-wkndfat  
-totfatpvm
-nghtfatpvm
-wkndfatpvm
-totfatrte 
-nghtfatrte
-wkndfatrte 
+#totfat     
+#nghtfat     
+#wkndfat  
+#totfatpvm
+#nghtfatpvm
+#wkndfatpvm
+#totfatrte 
+#nghtfatrte
+#wkndfatrte 
 ```
 
 **Demographic variables**
 
 ```{r}
-statepop
-vehicmiles
-unem
-perc14_24
+#statepop
+#vehicmiles
+#unem
+#perc14_24
 ```
 
 
@@ -156,18 +157,89 @@ grid.arrange(boxplot1, boxplot2, boxplot3, boxplot4, boxplot5, boxplot6, boxplot
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
+*totfatrte* defines the total fatalities per 100,000 population.
+
 
 ```{r}
+yearlyavg <- aggregate(totfatrte~year, drivingdf, mean)
 
+# Printing the yearly average for total fatality rate
+yearlyavg
+
+# Plotting the yearly total fatality rate
+ggplot(yearlyavg) + 
+  geom_line(
+    mapping = aes(x = year, y = totfatrte)
+)
 ```
+
+
+
+```{r}
+lm.fit1 <- lm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
+                      d00+d01+d02+d03+d04, data=drivingdf)
+summary(lm.fit1)
+```
+
+
 
 3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
+
+
+
+
+```{r}
+
+lm.fit2 <- lm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
+                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=drivingdf)
+summary(lm.fit2)
+
+```
+*bac10* is defined as the	blood alcohol limit of .10
+*bac08* is defined as the	blood alcohol limit of .08
+
+Both the variables *bac10* and *bac08* have the negative coefficients of -2.498 and -1.418 respectively. They are statistically significant and it implies that they have a strong negative correlation to the total fatality rate.
+
+Yes. *perse* variable has a statistically significant negative correlation with the total fatality rate. The coefficient value is -0.6201 which implies a small change in the rate.
+
+
+
 4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
+
+```{r}
+
+pnldata <- plm.data(drivingdf, c("state", "year"))
+
+model.fe <- plm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
+                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=pnldata, model = "within")
+summary(model.fe)
+
+```
 5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
 
+
+```{r}
+
+model.re <- plm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
+                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=pnldata, model = "random")
+summary(model.re)
+
+```
+
+```{r}
+phtest(model.fe, model.re)
+```
+
 6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
+
+
+
 
 7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
 
