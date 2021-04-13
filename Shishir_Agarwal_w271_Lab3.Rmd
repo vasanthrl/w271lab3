@@ -24,52 +24,232 @@ library(fpp3)
 library(car)
 library(Hmisc)
 library(skimr)
+library(gridExtra)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
 setwd("/home/jovyan/r_bridge/student_work/shagarwa/Lab#3")
 load("driving.RData")
-driving <- data
+driving.df <- data
+driving.tsibble <- as_tsibble(driving.df, index = year, key = state)
 desc
 options(scipen=999)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-names(driving)
-dim(driving)
-str(driving)
-summary(driving)
-describe(driving)
-glimpse(driving)
-skim(driving)
+#Quick EDA on Pooled Data
+names(driving.df)
+dim(driving.df)
+str(driving.df)
+summary(driving.df)
+describe(driving.df)
+glimpse(driving.df)
+skim(driving.df)
 
-driving.tsibble <- as_tsibble(driving, index = year, key = state)
+#Quick EDA on Cross Section Data for Year 2004
+driving_2004.df <- driving.df %>% filter(year == 2004)
+driving_1980.df <- driving.df %>% filter(year == 1980)
 
-#Time Plot of Data
-driving.tsibble %>%
-  autoplot(totfatrte) +
-  facet_wrap(~state) +
-  theme(legend.position = "none") +
+driving_2004.df %>% 
+  ggplot(aes(x = totfat)) +
+  geom_histogram(bins = 20)
+
+driving_2004.df %>% 
+  ggplot(aes(x = statepop)) +
+  geom_histogram(bins = 20)
+
+driving_2004.df %>% 
+  ggplot(aes(x = totfatrte)) +
+  geom_histogram(bins = 20)
+
+driving_2004.df %>% 
+  ggplot(aes(x = vehicmiles)) +
+  geom_histogram(bins = 20)
+
+driving_2004.df %>% 
+  ggplot(aes(statepop, totfat)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+
+driving_2004.df %>% 
+  ggplot(aes(vehicmiles, totfat)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+
+driving_2004.df %>% 
+  ggplot(aes(unem, totfat)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+
+driving_2004.df %>% 
+  ggplot(aes(perc14_24, totfat)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+
+driving_2004.df %>% 
+  ggplot(aes(x = factor(seatbelt), y = totfat)) +
+  geom_boxplot(aes(fill = factor(seatbelt))) + 
+  geom_jitter()
+  
+driving_2004.df %>% 
+  ggplot(aes(x = factor(sl70plus), y = totfat)) +
+  geom_boxplot(aes(fill = factor(sl70plus))) + 
+  geom_jitter()
+
+driving_2004.df %>% 
+  ggplot(aes(x = factor(perse), y = totfat)) +
+  geom_boxplot(aes(fill = factor(perse))) + 
+  geom_jitter()
+
+driving_2004.df %>% 
+  ggplot(aes(x = factor(gdl), y = totfat)) +
+  geom_boxplot(aes(fill = factor(gdl))) + 
+  geom_jitter()
+
+#Quick EDA on Time Series Data for State 1
+driving_5.tsibble <- driving.df %>% filter(state == 5) %>% as_tsibble(index = year)
+
+driving_5.tsibble$totfat %>% ggtsdisplay()
+driving_5.tsibble$totfat %>% gglagplot()
+driving_5.tsibble %>% 
+  ggplot(aes(year, totfat)) + 
+  geom_line() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
+  geom_point(aes(x = year, y = totfat, size = sl55), color = "blue") +
   labs(
-    title = "Fatality Rate By State from 1980-2004",
+    title = "Total Fatality For State 1 from 1980-2004",
     subtitle = "United State of America",
-    y = "Total Fatality Rate",
-    x = "Time(Yearly)"
+    y = "Fatality",
+    x = "Year"
     )
 
+#Aggregate EDA
+driving.tsibble %>% summarise(totfat = sum(totfat)) %>% autoplot()
+driving.tsibble %>% summarise(statepop = sum(statepop)) %>% autoplot()
+driving.tsibble %>% summarise(vehicmiles = sum(vehicmiles)) %>% autoplot()
+driving.tsibble %>% summarise(totfatrte = sum(totfat)*100000/sum(statepop)) %>% autoplot()
+driving.tsibble %>% summarise(vehicmilespc = sum(totfat)/sum(vehicmiles)) %>% autoplot()
+
 driving.tsibble %>%
-  autoplot(seatbelt) + 
+  ggplot(aes(year, seatbelt)) +
+  geom_line() +
   facet_wrap(~state) +
   scale_x_discrete(breaks = NULL) +
   scale_y_discrete(breaks = NULL)
 
 driving.tsibble %>%
   ggplot(aes(x = factor(year), y = totfat)) +  
-  geom_boxplot(aes(fill = factor(year)))
+  geom_boxplot() +
+  theme(legend.position = "none")
 
-driving.tsibble %>% 
-  summarise("Fatality Rate Across USA" = mean(totfat)) %>% 
-  autoplot()
+driving.tsibble %>%
+  ggplot(aes(x = factor(state), y = totfat)) +  
+  geom_boxplot() +
+  theme(legend.position = "none")
+
+g <- ggplot(driving.df, aes(year, totfat, colour = as.factor(state)))
+g + geom_line() + ggtitle("Growth Curve by ID")
+
+ggplot(driving.df, aes(year, totfat)) +
+  geom_point() +
+  facet_grid(as.factor(state) ~ ., scales = "free", space = "free")
+
+xyplot(totfat ~ year | state, data=driving.df, as.table=T)
+
+driving_5.tsibble %>% 
+  ggplot(aes(year, totfat)) + 
+  geom_line() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
+  geom_point(aes(x = year, y = 2000, size = perse), color = "blue") +
+  geom_point(aes(x = year, y = 1500, size = gdl), color = "red") +
+  geom_point(aes(x = year, y = 1000, size = seatbelt), color = "green") +
+  geom_point(aes(x = year, y = 500, size = zerotol), color = "yellow") +
+  geom_point(aes(x = year, y = 250, size = sl55 + sl65 + sl70 + sl75), color = "black")
+
+
+totfat_plot <- driving_5.tsibble %>% 
+  ggplot(aes(year, totfat)) + 
+  geom_line() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+sl55_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = sl55))
+sl65_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = sl65))
+sl70_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = sl70))
+sl75_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = sl75))
+seatbelt_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = seatbelt))
+minage_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = minage))
+zerotol_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = zerotol))
+gdl_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = gdl))
+bac10_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = bac10))
+bac08_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = bac08))
+perse_plot <- driving_5.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = perse))
+
+grid.arrange(
+  totfat_plot,
+  sl55_plot, 
+  sl65_plot,
+  sl70_plot,
+  ncol=1,
+  top="Speed Limit Law")
+
+grid.arrange(
+  totfat_plot,
+  seatbelt_plot,
+  ncol=1,
+  top="Seat Belt Law")
+
+grid.arrange(
+  totfat_plot,
+  minage_plot,
+  ncol=1,
+  top="Minimum Age Law")
+
+grid.arrange(
+  totfat_plot,
+  zerotol_plot,
+  ncol=1,
+  top="Zero Tolerance Law")
+
+grid.arrange(
+  totfat_plot,
+  gdl_plot,
+  ncol=1,
+  top="Graduate Law")
+
+grid.arrange(
+  totfat_plot,
+  perse_plot,
+  ncol=1,
+  top="Perse Law")
+
+grid.arrange(
+  totfat_plot,
+  bac10_plot,
+  bac08_plot,
+  ncol=1,
+  top="Blood Alchol Law")
+
 ```
 \newpage
 
