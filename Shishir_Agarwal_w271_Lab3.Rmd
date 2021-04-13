@@ -28,7 +28,8 @@ library(gridExtra)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-setwd("/home/jovyan/r_bridge/student_work/shagarwa/Lab#3")
+#setwd("/home/jovyan/r_bridge/student_work/shagarwa/Lab#3")
+setwd(getwd())
 load("driving.RData")
 driving.df <- data
 driving.tsibble <- as_tsibble(driving.df, index = year, key = state)
