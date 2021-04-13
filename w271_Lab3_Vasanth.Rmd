@@ -20,6 +20,7 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 # Import libraries
 library(ggplot2)
 library(gridExtra)
+library(corrplot)
 ```
 
 **Exercises:**
@@ -154,6 +155,10 @@ grid.arrange(boxplot1, boxplot2, boxplot3, boxplot4, boxplot5, boxplot6, boxplot
 
 ```
 
+```{r}
+corrplot(cor(drivingdf[1:30]))
+```
+
 
 ```{r}
 # Density
@@ -167,7 +172,7 @@ conditional_plot = function(data, plotvar, condvar, title) {
   g + geom_boxplot() + geom_jitter(width = 0.2) + ggtitle(title)
 }
 
-density_plot(drivingdf, drivingdf$totfatrte, "Totalfatrte")
+density_plot(drivingdf, drivingdf$totfatrte, "totfatrte")
 
 
 # yIndex by year (Heterogeineity across year)
@@ -177,10 +182,10 @@ conditional_plot(drivingdf, drivingdf$totfatrte, drivingdf$year, "Totalfatrte by
 conditional_plot(drivingdf, drivingdf$totfatrte, drivingdf$state, "Totalfatrte by State")
 
 
-scatterplot(totfatrte ~  year|state, boxplots=FALSE, smooth=TRUE, data=drivingdf)
+#scatterplot(totfatrte ~  year|state, boxplots=FALSE, smooth=TRUE, data=drivingdf)
 
 # Heterogeineity across countries
-plotmeans(totfatrte ~ state, main="Heterogeineity across States", data=drivingdf)
+#plotmeans(totfatrte ~ state, main="Heterogeineity across States", data=drivingdf)
 plotmeans(totfatrte ~ year, main="Heterogeineity across years", data=drivingdf)
 
 # 
@@ -191,6 +196,8 @@ xyplot(totfatrte ~ year | state, data=drivingdf, as.table=T)
 #xyplot(xIndex ~ year | country, data=df, as.table=T)
 
 ```
+
+
 
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
