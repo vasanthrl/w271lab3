@@ -21,6 +21,7 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 library(ggplot2)
 library(gridExtra)
 library(corrplot)
+library(gplots)
 ```
 
 **Exercises:**
