@@ -33,7 +33,7 @@ The dataset consists of 1200 rows and 56 columns. The data is from 1980 through 
 
 ```{r}
 # Clean up the work space before we begin
-rm(list = ls())
+#rm(list = ls())
 
 load("./driving.Rdata")
 drivingdf <- data
@@ -155,9 +155,47 @@ grid.arrange(boxplot1, boxplot2, boxplot3, boxplot4, boxplot5, boxplot6, boxplot
 ```
 
 
+```{r}
+# Density
+density_plot = function(data, plotvar, title) {
+  ggplot(data, aes(plotvar)) + geom_density() + ggtitle(title)
+}
+
+# Conditional Box-plot
+conditional_plot = function(data, plotvar, condvar, title) {
+  g <- ggplot(data, aes(as.factor(condvar), plotvar)) 
+  g + geom_boxplot() + geom_jitter(width = 0.2) + ggtitle(title)
+}
+
+density_plot(drivingdf, drivingdf$totfatrte, "Totalfatrte")
+
+
+# yIndex by year (Heterogeineity across year)
+conditional_plot(drivingdf, drivingdf$totfatrte, drivingdf$year, "Totalfatrte by year")
+
+# yIndex by country (Heterogeineity across countries)
+conditional_plot(drivingdf, drivingdf$totfatrte, drivingdf$state, "Totalfatrte by State")
+
+
+scatterplot(totfatrte ~  year|state, boxplots=FALSE, smooth=TRUE, data=drivingdf)
+
+# Heterogeineity across countries
+plotmeans(totfatrte ~ state, main="Heterogeineity across States", data=drivingdf)
+plotmeans(totfatrte ~ year, main="Heterogeineity across years", data=drivingdf)
+
+# 
+coplot(totfatrte ~ year|state, type="l", data=drivingdf)
+#coplot(xIndex ~ year|country, type="b", data=df)
+
+xyplot(totfatrte ~ year | state, data=drivingdf, as.table=T)
+#xyplot(xIndex ~ year | country, data=df, as.table=T)
+
+```
+
+
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
-*totfatrte* defines the total fatalities per 100,000 population.
+*totfatrte* defines the total fatalities per 100,000 population.**<<TODO>>**
 
 
 ```{r}
@@ -201,10 +239,11 @@ summary(lm.fit2)
 *bac10* is defined as the	blood alcohol limit of .10
 *bac08* is defined as the	blood alcohol limit of .08
 
-Both the variables *bac10* and *bac08* have the negative coefficients of -2.498 and -1.418 respectively. They are statistically significant and it implies that they have a strong negative correlation to the total fatality rate.
+Both the variables *bac08* and *bac10*  have the negative coefficients of -2.498 and -1.418 respectively. They are statistically significant and it implies that they have a strong negative correlation to the total fatality rate.If we come up with a stricter law and decrease the blood alcohol limit to .10 then the fatalities rate decreases more.
 
 Yes. *perse* variable has a statistically significant negative correlation with the total fatality rate. The coefficient value is -0.6201 which implies a small change in the rate.
 
+**TODO** write up about primary seatbelt law
 
 
 4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
@@ -212,7 +251,7 @@ Yes. *perse* variable has a statistically significant negative correlation with 
 
 ```{r}
 
-pnldata <- plm.data(drivingdf, c("state", "year"))
+pnldata <- pdata.frame(drivingdf, c("state", "year"))
 
 model.fe <- plm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
                       d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
@@ -235,10 +274,11 @@ summary(model.re)
 ```{r}
 phtest(model.fe, model.re)
 ```
+> Fixed effect model should be used
 
 6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
 
-
+The coefficient for the $vehicmilespc$ variable is 0.00094005 using the FE estimates and it is highly statistically significant. In other words, There will be an increase of 0.94 fatalities per 100k for an increase of 1000 vehicle miles driven per capita.
 
 
 7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
