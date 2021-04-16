@@ -25,232 +25,180 @@ library(car)
 library(Hmisc)
 library(skimr)
 library(gridExtra)
+library(plm)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
-#setwd("/home/jovyan/r_bridge/student_work/shagarwa/Lab#3")
-setwd(getwd())
+setwd("/home/jovyan/r_bridge/student_work/shagarwa/Lab#3")
 load("driving.RData")
 driving.df <- data
 driving.tsibble <- as_tsibble(driving.df, index = year, key = state)
 desc
+str(driving.df)
+dim(driving.df)
+table(driving.df$year)
+table(driving.df$state)
 options(scipen=999)
 ```
 
 ```{r, warning=FALSE, message=FALSE}
 #Quick EDA on Pooled Data
-names(driving.df)
-dim(driving.df)
-str(driving.df)
-summary(driving.df)
-describe(driving.df)
-glimpse(driving.df)
-skim(driving.df)
+totfatrte.hist <- ggplot(driving.df, aes(x = totfatrte)) +
+  geom_histogram(bins = 30, fill="#0072B2", colour="black") +
+  xlab("totfatrte") +
+  ylab("counts")
+unem.hist <- ggplot(driving.df, aes(x = unem)) +
+  geom_histogram(bins = 30, fill="#0072B2", colour="black") +
+  xlab("unem") +
+  ylab("counts")
+perc14_24.hist <- ggplot(driving.df, aes(x = perc14_24)) +
+  geom_histogram(bins = 30, fill="#0072B2", colour="black") +
+  xlab("perc14_24") +
+  ylab("counts")
+vehicmilespc.hist <- ggplot(driving.df, aes(x = vehicmilespc)) +
+  geom_histogram(bins = 30, fill="#0072B2", colour="black") +
+  xlab("vehicmilespc") +
+  ylab("counts")
+grid.arrange(
+  totfatrte.hist, unem.hist, perc14_24.hist, vehicmilespc.hist,
+  ncol = 2, nrow = 2,
+  top="Univariate Analysis of key Variables")
+
+totfatrte.unem.scatter <- ggplot(driving.df, aes(unem, totfatrte)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+totfatrte.perc14_24.scatter <- ggplot(driving.df, aes(perc14_24, totfatrte)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+totfatrte.vehicmilespc.scatter <- ggplot(driving.df, aes(vehicmilespc, totfatrte)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+grid.arrange(
+  totfatrte.unem.scatter, totfatrte.perc14_24.scatter, totfatrte.vehicmilespc.scatter,
+  ncol = 2, nrow = 2,
+  top="Bivariate Analysis of key Variables")
+
+
+driving.df.mutate <- driving.df %>% 
+  mutate(bac08 = ifelse(bac08 > 0.5,1,0)) %>% 
+  mutate(bac10 = ifelse(bac10 > 0.5,1,0)) %>% 
+  mutate(perse = ifelse(perse > 0.5,1,0)) %>% 
+  mutate(sl70plus = ifelse(sl70plus > 0.5,1,0)) %>% 
+  mutate(gdl = ifelse(gdl > 0.5,1,0))
+
+totfatrte.bac10.box <- ggplot(driving.df.mutate, aes(x = factor(bac10), y = totfatrte)) +
+  geom_boxplot(aes(fill = factor(bac10))) + xlab("bac10")
+totfatrte.perse.box <- ggplot(driving.df.mutate, aes(x = factor(perse), y = totfatrte)) +
+  geom_boxplot(aes(fill = factor(perse))) + xlab("perse")
+totfatrte.sbprim.box <- ggplot(driving.df.mutate, aes(x = factor(sbprim), y = totfatrte)) +
+  geom_boxplot(aes(fill = factor(sbprim)))+ xlab("sbprim")
+totfatrte.sl70plus.box <- ggplot(driving.df.mutate, aes(x = factor(sl70plus), y = totfatrte)) +
+  geom_boxplot(aes(fill = factor(sl70plus)))+ xlab("sl70plus")
+grid.arrange(
+  totfatrte.bac10.box, totfatrte.perse.box, totfatrte.sbprim.box, totfatrte.sl70plus.box, 
+  ncol = 2, nrow = 2,
+  top="Bivariate Analysis of key Variables")
 
 #Quick EDA on Cross Section Data for Year 2004
-driving_2004.df <- driving.df %>% filter(year == 2004)
-driving_1980.df <- driving.df %>% filter(year == 1980)
+totfatrte.mean.plot <- driving.tsibble %>% summarise(totfatrte = mean(totfatrte)) %>% autoplot()
+vehicmilespc.mean.plot <- driving.tsibble %>% summarise(vehicmilespc = mean(vehicmilespc)) %>% autoplot()
+grid.arrange(
+  totfatrte.mean.plot, vehicmilespc.mean.plot,
+  ncol = 2,
+  top="Aggregate Analysis of Key Variables")
 
-driving_2004.df %>% 
-  ggplot(aes(x = totfat)) +
-  geom_histogram(bins = 20)
+#Quick EDA on Time Series Data
+driving.summarize.tsibble <- driving.tsibble %>% summarise(totfatrte = mean(totfatrte),
+                              gdl = sum(gdl),
+                              bac10 = sum(bac10),
+                              bac08 = sum(bac08),
+                              perse = sum(perse),
+                              sl70plus = sum(sl70plus),
+                              sbprim = sum(sbprim))
 
-driving_2004.df %>% 
-  ggplot(aes(x = statepop)) +
-  geom_histogram(bins = 20)
-
-driving_2004.df %>% 
-  ggplot(aes(x = totfatrte)) +
-  geom_histogram(bins = 20)
-
-driving_2004.df %>% 
-  ggplot(aes(x = vehicmiles)) +
-  geom_histogram(bins = 20)
-
-driving_2004.df %>% 
-  ggplot(aes(statepop, totfat)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-
-driving_2004.df %>% 
-  ggplot(aes(vehicmiles, totfat)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-
-driving_2004.df %>% 
-  ggplot(aes(unem, totfat)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-
-driving_2004.df %>% 
-  ggplot(aes(perc14_24, totfat)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-
-driving_2004.df %>% 
-  ggplot(aes(x = factor(seatbelt), y = totfat)) +
-  geom_boxplot(aes(fill = factor(seatbelt))) + 
-  geom_jitter()
-  
-driving_2004.df %>% 
-  ggplot(aes(x = factor(sl70plus), y = totfat)) +
-  geom_boxplot(aes(fill = factor(sl70plus))) + 
-  geom_jitter()
-
-driving_2004.df %>% 
-  ggplot(aes(x = factor(perse), y = totfat)) +
-  geom_boxplot(aes(fill = factor(perse))) + 
-  geom_jitter()
-
-driving_2004.df %>% 
-  ggplot(aes(x = factor(gdl), y = totfat)) +
-  geom_boxplot(aes(fill = factor(gdl))) + 
-  geom_jitter()
-
-#Quick EDA on Time Series Data for State 1
-driving_5.tsibble <- driving.df %>% filter(state == 5) %>% as_tsibble(index = year)
-
-driving_5.tsibble$totfat %>% ggtsdisplay()
-driving_5.tsibble$totfat %>% gglagplot()
-driving_5.tsibble %>% 
-  ggplot(aes(year, totfat)) + 
-  geom_line() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
-  geom_point(aes(x = year, y = totfat, size = sl55), color = "blue") +
+totfatre.bac10.plot <- driving.summarize.tsibble %>% 
+  ggplot(aes(year, totfatrte)) + 
+  geom_line() +
+  geom_point(aes(x = year, y = totfatrte, size = bac08 + bac10), color = "blue") +
   labs(
-    title = "Total Fatality For State 1 from 1980-2004",
-    subtitle = "United State of America",
-    y = "Fatality",
+    y = "Fatality Rate",
     x = "Year"
     )
 
-#Aggregate EDA
-driving.tsibble %>% summarise(totfat = sum(totfat)) %>% autoplot()
-driving.tsibble %>% summarise(statepop = sum(statepop)) %>% autoplot()
-driving.tsibble %>% summarise(vehicmiles = sum(vehicmiles)) %>% autoplot()
-driving.tsibble %>% summarise(totfatrte = sum(totfat)*100000/sum(statepop)) %>% autoplot()
-driving.tsibble %>% summarise(vehicmilespc = sum(totfat)/sum(vehicmiles)) %>% autoplot()
-
-driving.tsibble %>%
-  ggplot(aes(year, seatbelt)) +
+totfatre.sbprim.plot <- driving.summarize.tsibble %>% 
+  ggplot(aes(year, totfatrte)) +
   geom_line() +
-  facet_wrap(~state) +
-  scale_x_discrete(breaks = NULL) +
-  scale_y_discrete(breaks = NULL)
+  geom_point(aes(x = year, y = totfatrte, size = sbprim), color = "blue") +
+  labs(
+    y = "Fatality Rate",
+    x = "Year"
+    )
+
+totfatre.perse.plot <- driving.summarize.tsibble %>% 
+  ggplot(aes(year, totfatrte)) + 
+  geom_line() +
+  geom_point(aes(x = year, y = totfatrte, size = perse), color = "blue") +
+  labs(
+    y = "Fatality Rate",
+    x = "Year"
+    )
+
+totfatre.gdl.plot <- driving.summarize.tsibble %>% 
+  ggplot(aes(year, totfatrte)) + 
+  geom_line() +
+  geom_point(aes(x = year, y = totfatrte, size = gdl), color = "blue") +
+  labs(
+    y = "Fatality Rate",
+    x = "Year"
+    )
+grid.arrange(
+  totfatre.bac10.plot, totfatre.perse.plot, totfatre.sbprim.plot, totfatre.gdl.plot, 
+  ncol = 2, nrow = 2,
+  top="Trivariate Analysis (Size of Dot represents # of states passing the law")
+
+driving.summarize.tsibble$totfatrte %>% ggtsdisplay()
+
+
 
 driving.tsibble %>%
-  ggplot(aes(x = factor(year), y = totfat)) +  
+  ggplot(aes(x = factor(year), y = totfatrte)) +  
   geom_boxplot() +
   theme(legend.position = "none")
 
 driving.tsibble %>%
-  ggplot(aes(x = factor(state), y = totfat)) +  
+  ggplot(aes(x = factor(state), y = totfatrte)) +  
   geom_boxplot() +
   theme(legend.position = "none")
 
-g <- ggplot(driving.df, aes(year, totfat, colour = as.factor(state)))
-g + geom_line() + ggtitle("Growth Curve by ID")
-
-ggplot(driving.df, aes(year, totfat)) +
-  geom_point() +
-  facet_grid(as.factor(state) ~ ., scales = "free", space = "free")
-
-xyplot(totfat ~ year | state, data=driving.df, as.table=T)
-
-driving_5.tsibble %>% 
-  ggplot(aes(year, totfat)) + 
-  geom_line() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
-  geom_point(aes(x = year, y = 2000, size = perse), color = "blue") +
-  geom_point(aes(x = year, y = 1500, size = gdl), color = "red") +
-  geom_point(aes(x = year, y = 1000, size = seatbelt), color = "green") +
-  geom_point(aes(x = year, y = 500, size = zerotol), color = "yellow") +
-  geom_point(aes(x = year, y = 250, size = sl55 + sl65 + sl70 + sl75), color = "black")
+ggplot(driving.df, aes(year, totfatrte, colour = as.factor(state))) + 
+  geom_line() + ggtitle("Growth Curve by State")
 
 
-totfat_plot <- driving_5.tsibble %>% 
-  ggplot(aes(year, totfat)) + 
-  geom_line() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-sl55_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = sl55))
-sl65_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = sl65))
-sl70_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = sl70))
-sl75_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = sl75))
-seatbelt_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = seatbelt))
-minage_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = minage))
-zerotol_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = zerotol))
-gdl_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = gdl))
-bac10_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = bac10))
-bac08_plot <- driving_5.tsibble %>% 
-  ggplot(aes(x = year)) + 
-  geom_line(aes(y = bac08))
-perse_plot <- driving_5.tsibble %>% 
+
+totfatrte_plot <- driving.summarize.tsibble %>% 
+  ggplot(aes(year, totfatrte)) + 
+  geom_line()
+
+perse_plot <- driving.summarize.tsibble %>% 
   ggplot(aes(x = year)) + 
   geom_line(aes(y = perse))
 
-grid.arrange(
-  totfat_plot,
-  sl55_plot, 
-  sl65_plot,
-  sl70_plot,
-  ncol=1,
-  top="Speed Limit Law")
+bac10_plot <- driving.summarize.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = bac10 + bac08))
+
+sbprim_plot <- driving.summarize.tsibble %>% 
+  ggplot(aes(x = year)) + 
+  geom_line(aes(y = sbprim))
 
 grid.arrange(
-  totfat_plot,
-  seatbelt_plot,
-  ncol=1,
-  top="Seat Belt Law")
-
-grid.arrange(
-  totfat_plot,
-  minage_plot,
-  ncol=1,
-  top="Minimum Age Law")
-
-grid.arrange(
-  totfat_plot,
-  zerotol_plot,
-  ncol=1,
-  top="Zero Tolerance Law")
-
-grid.arrange(
-  totfat_plot,
-  gdl_plot,
-  ncol=1,
-  top="Graduate Law")
-
-grid.arrange(
-  totfat_plot,
-  perse_plot,
-  ncol=1,
-  top="Perse Law")
-
-grid.arrange(
-  totfat_plot,
+  totfatrte_plot,
+  perse_plot, 
   bac10_plot,
-  bac08_plot,
-  ncol=1,
-  top="Blood Alchol Law")
-
+  sbprim_plot,
+  ncol=2,
+  nrow = 2,
+  top="Number of States with Law")
 ```
 \newpage
 
@@ -265,6 +213,62 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 1. (30%) Load the data. Provide a description of the basic structure of the dataset, as we have done throughout the semester. Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable *totfatrte* and the potential explanatory variables. You need to write a detailed narrative of your observations of your EDA. *Reminder: giving an "output dump" (i.e. providing a bunch of graphs and tables without description and hoping your audience will interpret them) will receive a zero in this exercise.*
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
+
+```{r, warning=FALSE, message=FALSE}
+driving.lm <-lm(totfatrte ~ factor(year), data=driving.df)
+summary(driving.lm)
+plot(driving.lm)
+
+driving.lm <- lm(totfatrte ~ factor(year)+bac08+bac10+perse+sbprim+sbsecon+sl70plus+gdl+perc14_24+unem+vehicmilespc, data=driving.df)
+summary(driving.lm)
+plot(driving.lm)
+
+
+driving.lm <- lm(log(totfatrte) ~ factor(year)+bac08+bac10+perse+sbprim+sbsecon+sl70plus+gdl+perc14_24+unem+vehicmilespc, data=driving.df)
+summary(driving.lm)
+plot(driving.lm)
+
+driving.df.mutate <- driving.df %>% 
+  mutate(bac08 = ifelse(bac08 > 0.5,1,0)) %>% 
+  mutate(bac10 = ifelse(bac10 > 0.5,1,0)) %>% 
+  mutate(perse = ifelse(perse > 0.5,1,0)) %>% 
+  mutate(sl70plus = ifelse(sl70plus > 0.5,1,0)) %>% 
+  mutate(gdl = ifelse(gdl > 0.5,1,0))
+
+a <- driving.tsibble %>% filter(perse == 0) %>% summarise(totfatrte = sum(totfat)*100000/sum(statepop))
+b <- driving.tsibble %>% filter(perse == 1) %>% summarise(totfatrte = sum(totfat)*100000/sum(statepop))
+c <- driving.tsibble %>% summarise(totfatrte = sum(totfat)*100000/sum(statepop))
+
+ggplot() +
+  geom_line(data = a, aes(x=year,y=totfatrte), color = "black") +
+  geom_line(data = b, aes(x=year,y=totfatrte), color = "red") +
+  geom_line(data = c, aes(x=year,y=totfatrte), color = "blue")
+
+driving.lm <-lm(totfatrte ~ factor(year), data=driving.df.mutate)
+summary(driving.lm)
+plot(driving.lm)
+
+driving.lm <- lm(totfatrte ~ factor(year)+bac08+bac10+perse+sbprim+sbsecon+sl70plus+gdl+perc14_24+unem+vehicmilespc, data=driving.df.mutate)
+summary(driving.lm)
+plot(driving.lm)
+
+
+driving.lm <- lm(log(totfatrte) ~ factor(year)+bac08+bac10+perse+sbprim+sbsecon+sl70plus+gdl+perc14_24+unem+vehicmilespc, data=driving.df.mutate)
+summary(driving.lm)
+plot(driving.lm)
+
+```
+
+```{r}
+library(plm)
+driving.plm.fe <-plm(totfatrte ~ factor(year)+bac08+bac10+perse+sbprim+sbsecon+sl70plus+gdl+perc14_24+unem+vehicmilespc, data=driving.df, index=c("state", "year"), model="within")
+summary(driving.plm.fe)
+
+driving.plm.re<-plm(totfatrte ~ factor(year)+bac08+bac10+perse+sbprim+sbsecon+sl70plus+gdl+perc14_24+unem+vehicmilespc, data=driving.df, index=c("state", "year"), model="random")
+summary(driving.plm.re)
+
+phtest(driving.plm.fe, driving.plm.re)
+```
 
 3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
