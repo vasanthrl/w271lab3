@@ -19,22 +19,14 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 library(foreign) 
 library(gplots) 
 library(ggplot2) 
-library(stats) 
-library(Hmisc) 
-library(car) 
 library(dplyr) 
 library(corrplot) 
-#library(corrgram) 
 library(lattice) 
 library(plm)
 library(viridis)
 library(tsibble)
 library(forecast)
-
-#for US State Map
 library(tidyverse)  
-library(maps)
-library(mapproj)
 library(gridExtra)
 ```
 
@@ -53,13 +45,13 @@ driving.df <- data
 #
 dim(driving.df)
 #describe the variables 
-desc
+#desc
 
 #examine the dat
 rbind(head(data,2),tail(data,2))
 
 #check for nulls
-apply(data, 2, function(x) any(is.na(x)))
+#apply(data, 2, function(x) any(is.na(x)))
 
 #check for gaps in panel
 table(data$state)
@@ -67,44 +59,44 @@ table(data$year)
 ```
 The Dataset is panel data, that contains observations about different US states from year 1980 to 2004. There are 1200 observations in total, with 56 columns . The data has 25 observations each, one per year, from 48 continental states except state ids 2,9 and 12 (which we will later identify as Alaska, District Of Columbia and Hawaii that are not part of continental US States). All variables are observed for all states and over all time periods, hence the panel is balanced. Important variables are:
 
-**Panel Index**
+**Panel Index**   
 year:	1980 through 2004			
 state:	numeric id of 48 continental states, ordered alphabetically, ranging from 1 to 51. 
 
-**Dependent Variable**
+**Dependent Variable**   
 totfatrte:	total fatalities per 100,000 population by year by state. Values range from 6.2 to 53.32
 
-**Speed Limit Variables**
-sl55:	1 if speed limit == 55 for the whole year. If the law was in effect only during part of the year, it is set to fractions of 12. This applies for all indicator variables.
-sl65:	1 if speed limit == 65			
-sl70:	1 if speed limit == 70			
-sl75:	1 if speed limit == 75			
-slnone:	1 if no speed limit
-sl70plus:	sl70 + sl75 + slnone	
+**Speed Limit Variables**   
+sl55:	1 if speed limit == 55 for the whole year. If the law was in effect only during part of the year, it is set to fractions of 12. This applies for all indicator variables.  
+sl65:	1 if speed limit == 65			  
+sl70:	1 if speed limit == 70			  
+sl75:	1 if speed limit == 75			  
+slnone:	1 if no speed limit  
+sl70plus:	sl70 + sl75 + slnone	  
 
-**Drinking Laws**
-minage:	minimum drinking age, ranges from 18 years to 21 years.
-zerotol:	1 if zero tolerance law was in effect, and 0 if not. If the law was in effect only during part of the year, it is set to fractions of 12. 
-bac10:	1 if blood alcohol limit .10	in effect, and 0 if not. Fractions used to denote partial years, as above. 	
-bac08:	1 if blood alcohol limit .08	in effect, and 0 if not. Fractions used to denote partial years, as above. 	
-per se:	1 if administrative license revocation (per se law)	in effect, and 0 if not. Fractions used to denote partial years, as above. 	
+**Drinking Laws**    
+minage:	minimum drinking age, ranges from 18 years to 21 years.  
+zerotol:	1 if zero tolerance law was in effect, and 0 if not. If the law was in effect only during part of the year, it is set to fractions of 12.   
+bac10:	1 if blood alcohol limit .10	in effect, and 0 if not. Fractions used to denote partial years, as above. 	  
+bac08:	1 if blood alcohol limit .08	in effect, and 0 if not. Fractions used to denote partial years, as above. 	  
+per se:	1 if administrative license revocation (per se law)	in effect, and 0 if not. Fractions used to denote partial years, as above. 	  
 
-**Seatbelt Laws**
+**Seatbelt Laws**    
 sbprim:	1 if primary seatbelt law	was in effect, 0 otherswise. There are no fractions in this variable.
 sbsecon:	1 if secondary seatbelt law	was in effect, 0 otherswise. There are no fractions in this variable.		
 seatbelt:	0 if none, =1 if primary, =2 if secondary. There are no fractions in this variable.		
 
-**Age iimit Laws** 
+**Age iimit Laws**   
 gdl:	1 if graduated drivers license law was in effect, and 0 if not. Fractions used to denote partial years, similar to speed limit.
 
-**Demographic variables**
+**Demographic variables**  
 statepop:	state population by year by state. Values range from 453,401 to 35,894,000			
 vehicmiles:	vehicle miles traveled, billions. Values range from 3.7027 to 329.6			
 unem:	unemployment rate, percent. Values range from 3.2 to 18				
 perc14_24:	percent population aged 14 through 24. Values range from 11.7 to 20.3	
 
-**year Dummy**  
-Dummy variables $d80$ - $d2004$ indicating years
+**Year Dummy**    
+Dummy variables $d80$ - $d04$ indicating years
 
 It will be useful to add more context around the state information, in addition to the state id. Since we know the id is alphabetical, we get the aphabetical list of US states with two letter abbreviated code, and match with the state variable in fatality data. 
 
@@ -113,7 +105,6 @@ It will be useful to add more context around the state information, in addition 
 us.states = read.csv("usstates.csv", header = TRUE, sep = ",", dec = ".")
 
 data.with.name <- merge(data, us.states, by=c("state","state"))
-#data  %>%  summarise_at(vars(vehicmiles,vehicmilespc), funs(max,min))
 ```
 
 To start EDA, we perform univariate analyses of important variables fatality rate, unemployment, % of younger population, and vehiclemilespc to examine the distribution.
@@ -136,23 +127,28 @@ Then, determine both the common and individual driving behaviors of US States ac
 Below we analyze the fatality rate change by year and overall change by state . 
 ```{r 1 EDA.fat.by.year,warning=FALSE,message=FALSE}
 #fatality change by year 
-traffic.yearly.aggr <- data %>%   group_by(year) %>%  summarise_at(vars(totfat, nghtfat,wkndfat), funs(sum))
+traffic.yearly.aggr <- data %>%   group_by(year) %>%  summarise_at(vars(totfatrte, nghtfatrte,wkndfatrte), funs(mean))
 
-year.plot <- ggplot(traffic.yearly.aggr, aes(year, totfat)) +
+#fatality change by state 
+traffic.state.perc.aggr <- data.with.name %>%
+  group_by(shortname) %>%
+  summarise_at(vars(totfatrte,nghtfatrte,wkndfatrte), funs(mean))
+
+year.plot <- ggplot(traffic.yearly.aggr, aes(year, totfatrte)) +
   geom_bar(aes(fill = factor(year)), position = "dodge", stat="identity") + ggtitle("Fatalities by year") + theme_gray() + scale_fill_hue(c=45,l=80) +
   #geom_abline(intercept, slope, linetype, color, size) + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + geom_text(data = traffic.yearly.aggr, aes(x = year, y = totfat, label = totfat), size = 2,angle = 90, position = position_stack(vjust = .5)) +
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + geom_text(data = traffic.yearly.aggr, aes(x = year, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5)) +
   theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none")
 
 state.plot <- ggplot(traffic.state.perc.aggr, aes(shortname, totfatrte)) +
   geom_bar(aes(fill = factor(shortname)), position = "dodge", stat="identity") + ggtitle("Fatalities by state") +    theme_gray() + 
   scale_fill_hue(c=45,l=80) + theme(plot.title = element_text(size = 8, hjust = 0.5)) + 
   theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + geom_text(data = traffic.state.perc.aggr, aes(x = shortname, y = totfatrte, label = round(totfatrte,2)), size = 2,angle = 90, position = position_stack(vjust = .5))
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + geom_text(data = traffic.state.perc.aggr, aes(x = shortname, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5))
 
-grid.arrange(year.plot, state.plot, nrow = 1,  ncol = 2)
+grid.arrange(year.plot, state.plot, nrow = 2,  ncol = 1)
 ```
-We can see that the fatality rate is largely decreasing from 1980 to 2004. We can see that the fatality rates range from ~9 to ~34. Wyoming, New Mexico, Mississippi, Montana, and South Carolina are the states with highest fatality rates while New York, New Jersey and Rhode Island are the states with lowest fatality rates. The pattern shows that the states with more rural roads have higher fatality rates - the geography and road conditions are thus important omitted variables in the dataset. In addition, the fataility split by cause (drunk driving, speeding) by state by year could be an important predictor. Another omitted variable could be the a measure of compliance to the traffic laws - speed limit, seat belt -  at the state level. 
+We can see that the fatality rate is largely decreasing from 1980 to 2004. The fatality rates range from ~9 to ~34. Wyoming, New Mexico, Mississippi, Montana, and South Carolina are the states with highest fatality rates while New York, New Jersey and Rhode Island are the states with lowest fatality rates. The pattern shows that the states with more rural roads have higher fatality rates - the geography and road conditions are thus important omitted variables in the dataset. In addition, the fataility split by cause (drunk driving, speeding) by state by year could be an important predictor. Another omitted variable could be the a measure of compliance to the traffic laws - speed limit, seat belt -  at the state level. 
 
 Next we analyze how the fatality rates varied over the years, in individual states. 
 
@@ -174,7 +170,7 @@ geom_line(aes(y = bac10, color='bac10'), size = 1.5, group = 1) +
   geom_line(aes(y=bac08, color='bac08'), size = 1.5, group = 1) + 
   geom_line(aes(y=zerotol, color='zerotol'), size = 1.5, group = 1) + 
   geom_line(aes(y=totfatrte, color='totfatrte'), size = 2, group = 1) + 
-  scale_x_continuous(breaks = seq(min(sl.df$year), max(sl.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5)) + scale_color_manual(name = "Blood Alcohol Level",
+  scale_x_continuous(breaks = seq(min(bac.df$year), max(bac.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5)) + scale_color_manual(name = "Blood Alcohol Level",
       values = c(
            bac08="red",
            bac10="blue",
@@ -226,7 +222,7 @@ glaws.plot <- ggplot(glaws.df, aes(x = year)) +
   geom_line(aes(y=gdl, color='gdl'), size = 1.5, group = 1) + 
   geom_line(aes(y=perse, color='perse'), size = 1.5, group = 1) + 
   geom_line(aes(y=totfatrte, color='totfatrte'), size = 1.5, group = 1)+ 
-  scale_x_continuous(breaks = seq(min(sl.df$year), max(sl.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5)) + scale_color_manual(name = "Traffic Laws",
+  scale_x_continuous(breaks = seq(min(glaws.df$year), max(glaws.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5)) + scale_color_manual(name = "Traffic Laws",
       values = c(
            gdl="green",
            perse="blue",
@@ -242,7 +238,7 @@ sb.plot <- ggplot(glaws.df, aes(x = year)) +
   geom_line(aes(y=sbprim, color='sbprim'), size = 1.5, group = 1)+ 
   geom_line(aes(y=sbsecon, color='sbsecon'), size = 1.5, group = 1)+ 
   geom_line(aes(y=totfatrte, color='totfatrte'), size = 1.5, group = 1)+ 
-  scale_x_continuous(breaks = seq(min(sl.df$year), max(sl.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5)) + scale_color_manual(name = "Traffic Laws",
+  scale_x_continuous(breaks = seq(min(glaws.df$year), max(glaws.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5)) + scale_color_manual(name = "Traffic Laws",
       values = c(
            sbprim="cyan",
            sbsecon="yellow",
@@ -258,7 +254,7 @@ grid.arrange(sb.plot, glaws.plot, nrow = 1,  ncol = 2)
 ```
 We find that states adopt stricter seatbelt laws over the years. We find that more states adopted the $Per Se law$ that mandates the "on the spot" suspension of an accused person's DL based upon a Law Enforcement Officer's belief that the person was operating a motor vehicle with an blood alcohol concentration of .08% or greater.  We also see more adoption for $Gdl$ law that mandates a multi-step process for new teen drivers to obtain the DL. The above patterns are consitent with the decrease in traffic fatality rates over years.
 
-Then we look at how the pattern of demographic changes over years compares to fatality rates change. We examine the $% of population aged 14-24$, $unemployment rate$ and $vehicmilespc$. 
+Then we look at how the pattern of demographic changes over years compares to fatality rates change. We examine the $percent of population aged 14-24$, $unemployment rate$ and $vehicmilespc$. 
 
 ```{r 1 EDA2,warning=FALSE,message=FALSE}
 # summarize the average statistics for speed limit in a data frame
@@ -300,10 +296,6 @@ traffic.state.aggr <- data.with.name %>%
   group_by(shortname) %>%
   summarise_at(vars(totfat, nghtfat,wkndfat), funs(sum))
 
-traffic.state.perc.aggr <- data.with.name %>%
-  group_by(shortname) %>%
-  summarise_at(vars(totfatrte,nghtfatrte,wkndfatrte), funs(mean))
-
 top.3.fatalities <- traffic.state.perc.aggr %>%
          filter(rank(desc(totfatrte))<=3) %>% arrange(desc(totfatrte))
 
@@ -315,7 +307,7 @@ cbind(top.3.fatalities[,1:2],bottom.3.fatalities[,1:2])
 data.top.filtered <- data.with.name %>% filter(shortname %in% c("MS","NM","WY"))
 data.bottom.filtered <- data.with.name %>% filter(shortname %in% c("MA","NY","RI"))
 
-data.with.name %>% filter(shortname %in% c("MS","NM","WY","MA","NY","RI") & year == '2004') %>% dplyr::select(year,name,totfatrte) %>% arrange(desc(totfatrte))
+#data.with.name %>% filter(shortname %in% c("MS","NM","WY","MA","NY","RI") & year == '2004') %>% dplyr::select(year,name,totfatrte) %>% arrange(desc(totfatrte))
 #data.with.name %>% filter(year == '2004') %>% dplyr::select(year,name,totfatrte) %>% arrange(desc(totfatrte))
 
 data.merged <- union(data.top.filtered,data.bottom.filtered)
@@ -369,81 +361,7 @@ Some of them are different ways of representing the same info, we need to pick a
 
 We can see that New Mexico and Wyoming has high variance in the data, with NM consistently reducing the traffic fatality rate over years. However, WY reduced the fatality rate from 80's to mid 90's and had a gradual increase after. The bottom 3 states have very low variance across years.
 
-Now we proceed to examine individual cross sections for the first and the last years in the dataset - 1980 and 2004.
 
-```{r 1.EDA.year, warning=FALSE,message=FALSE}
-driving_2004.df <- driving.df %>% filter(year == 2004)
-driving_1980.df <- driving.df %>% filter(year == 1980)
-```
-
-```{r 1.EDA.yearplots, warning=FALSE,message=FALSE}
-
-driving_2004.df %>% 
-  ggplot(aes(x = totfatrte)) +
-  geom_histogram(bins = 20)
-
-driving_2004.df %>% 
-  ggplot(aes(x = vehicmiles)) +
-  geom_histogram(bins = 20)
-
-driving_2004.df %>% 
-  ggplot(aes(statepop, totfat)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-
-driving_2004.df %>% 
-  ggplot(aes(vehicmiles, totfat)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-
-driving_2004.df %>% 
-  ggplot(aes(unem, totfat)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-
-driving_2004.df %>% 
-  ggplot(aes(perc14_24, totfat)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-
-driving_2004.df %>% 
-  ggplot(aes(x = factor(seatbelt), y = totfat)) +
-  geom_boxplot(aes(fill = factor(seatbelt))) + 
-  geom_jitter()
-  
-driving_2004.df %>% 
-  ggplot(aes(x = factor(sl70plus), y = totfat)) +
-  geom_boxplot(aes(fill = factor(sl70plus))) + 
-  geom_jitter()
-
-driving_2004.df %>% 
-  ggplot(aes(x = factor(perse), y = totfat)) +
-  geom_boxplot(aes(fill = factor(perse))) + 
-  geom_jitter()
-
-driving_2004.df %>% 
-  ggplot(aes(x = factor(gdl), y = totfat)) +
-  geom_boxplot(aes(fill = factor(gdl))) + 
-  geom_jitter()
-
-#Quick EDA on Time Series Data for State 1
-driving_5.tsibble <- driving.df %>% filter(state == 5) %>% as_tsibble(index = year)
-
-driving_5.tsibble$totfat %>% ggtsdisplay()
-driving_5.tsibble$totfat %>% gglagplot()
-driving_5.tsibble %>% 
-  ggplot(aes(year, totfat)) + 
-  geom_line() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) +
-  geom_point(aes(x = year, y = totfat, size = sl55), color = "blue") +
-  labs(
-    title = "Total Fatality For State 1 from 1980-2004",
-    subtitle = "United State of America",
-    y = "Fatality",
-    x = "Year"
-    )
-
-```
 ```{r transform,warning=FALSE,message=FALSE}
 df.transformed <- data.with.name %>%
   mutate(
@@ -461,9 +379,6 @@ df.transformed <- data.with.name %>%
       TRUE ~ 0
     )
   )
-
-df.transformed %>% filter (slcat == "Other") %>% dplyr::select (sl55,sl65,sl70,sl75,slnone,slcat)
-df.transformed %>% filter (slcat == "Other") %>% dplyr::select (year,name,sl55,sl65,sl70,sl75,slnone,slcat)
 
 g <- ggplot(df.transformed, aes(year, totfatrte, colour = as.factor(slcat)))
 g + geom_point() + ggtitle("Fatality Rate Change for speed limit") + facet_wrap(~slcat)
