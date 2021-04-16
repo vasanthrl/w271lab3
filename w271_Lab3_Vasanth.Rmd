@@ -22,6 +22,7 @@ library(ggplot2)
 library(gridExtra)
 library(corrplot)
 library(gplots)
+library(plm)
 ```
 
 **Exercises:**
@@ -291,7 +292,13 @@ The coefficient for the $vehicmilespc$ variable is 0.00094005 using the FE estim
 
 7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
 
+There is no serial correlation in the idiosyncratic errors of our model as shown in the p-value below. However if there is Serial correlation then it  will not affect the unbiasedness or 
+consistency of OLS estimators, but it does affect their efficiency. With positive serial correlation, the OLS estimates of the standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. 
 
+
+```{r}
+pbgtest(model.fe)
+```
 
 
 
