@@ -352,7 +352,7 @@ We can see that New Mexico and Wyoming has high variance in the data, with NM co
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
-*totfatrte* defines the total fatalities per 100,000 population.**<<TODO>>**
+The dependent variable *totfatrte* is defined as the total fatalities per 100,000 population. The average of this *totfatrte* variable per year is computed below.
 
 
 ```{r}
@@ -368,6 +368,7 @@ ggplot(yearlyavg) +
 )
 ```
 
+Let's estimating the linear regression for the dummy variables from 1981 to 2004 below. This model explains the impact of time on the total fatality rate. All the dummy variables to be highly statistically significant except for 1981. We see a downward trending total fatality rate increasing with time and it proves that the driving became safer over this period.
 
 
 ```{r}
