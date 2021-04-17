@@ -26,7 +26,7 @@ library(plm)
 library(viridis)
 library(tsibble)
 library(forecast)
-library(tidyverse)  
+#library(tidyverse)  
 library(gridExtra)
 ```
 
@@ -308,6 +308,28 @@ summary(lm.fit1)
 3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
 
+**Is Transformation needed?**
+
+The variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl* define the year in which the law has become effective. It ranges from 0-1 with decimals as the law could the change in the middle of the year. We don't want to transform this variable into binary as we might lose some important information about changes that happened in the middle of the year.
+
+Variables like *perc14_24, unem, vehicmilespc* are already normalized and so no transformation is necessary.
+
+
+**Definition of bac08 and bac10 variables and their interpretation**
+
+*bac10* is defined as the	blood alcohol limit of .10 and *bac08* is defined as the	blood alcohol limit of .08. Both the variables *bac08* and *bac10*  have the negative coefficients of -2.498 and -1.418 respectively. They are statistically significant and it implies that they have a strong negative correlation to the total fatality rate.If we come up with a stricter law and decrease the blood alcohol limit to .10 then the fatalities rate decreases more.
+
+
+**Effect of perse law on fatality rate**
+
+Yes. *perse* variable has a statistically significant negative correlation with the total fatality rate. The coefficient value is -0.6201 which implies a small change in the rate.
+
+
+**Effect of primary seat belt law on fatality rate**
+
+We are not able to find any statistically significant effect of the primary seat belt law on the fatality rate based on the regression coefficients shown below. 
+
+
 ```{r}
 
 lm.fit2 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
@@ -317,14 +339,6 @@ lm.fit2 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + 
 summary(lm.fit2)
 
 ```
-*bac10* is defined as the	blood alcohol limit of .10
-*bac08* is defined as the	blood alcohol limit of .08
-
-Both the variables *bac08* and *bac10*  have the negative coefficients of -2.498 and -1.418 respectively. They are statistically significant and it implies that they have a strong negative correlation to the total fatality rate.If we come up with a stricter law and decrease the blood alcohol limit to .10 then the fatalities rate decreases more.
-
-Yes. *perse* variable has a statistically significant negative correlation with the total fatality rate. The coefficient value is -0.6201 which implies a small change in the rate.
-
-**TODO** write up about primary seatbelt law
 
 
 
