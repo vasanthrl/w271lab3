@@ -344,6 +344,16 @@ summary(lm.fit2)
 
 4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
+**Coeefficients comparison for *bac08, bac10, perse, and sbprim* between pooled OLS and Fixed effects model**
+
+Coefficients have gone down for the *bac08, bac10, perse, and sbprim* from -2.498, -1.418, -0.62, -0.07533 for the pooles OLS model to -1.437, -1.062, -1.152, -1.227 for the fixed effects model respectively. Furthermore *sbprim* has become statistically significant in the Fixed effects model.
+
+**Model reliability and assumptions**
+
+Fixed effects model is more reliable than the pooled OLS model as it considers the panel data into account and models the total fatality rate of each state over time. 
+
+Pooled OLS model assumes that the individual specific effects are uncorrelated with the independent variables. This is a wrong assumption as there will be correlation between different observations within the same state. But Fixed effects model assumes that the individual specific effect are correlated with the independent variables and therefore is more reasonable in the current context than the pooled OLS model.
+
 
 ```{r}
 # Creating a panel with 'State' and 'Year' variables.
