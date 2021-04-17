@@ -277,7 +277,7 @@ Thus both the overall and state level EDA indicates that there is a reduction in
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
-The dependent variable *totfatrte* is defined as the total fatalities per 100,000 population. The average of this *totfatrte* variable per year is computed below.
+*totfatrte* defines the total fatalities per 100,000 population.**<<TODO>>**
 
 
 ```{r}
@@ -293,13 +293,12 @@ ggplot(yearlyavg) +
 )
 ```
 
-Let's estimating the linear regression for the dummy variables from 1981 to 2004 below. This model explains the impact of time on the total fatality rate. All the dummy variables to be highly statistically significant except for 1981. We see a downward trending total fatality rate increasing with time and it proves that the driving became safer over this period.
 
 
 ```{r}
-lm.fit1 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 +
-                      d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 +
-                      d00 + d01 + d02 + d03 + d04, data=driving.df)
+lm.fit1 <- lm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
+                      d00+d01+d02+d03+d04, data=driving.df)
 summary(lm.fit1)
 ```
 
@@ -310,10 +309,9 @@ summary(lm.fit1)
 
 ```{r}
 
-lm.fit2 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
-                d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
-                d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + 
-                perc14_24 + unem + vehicmilespc, data=driving.df)
+lm.fit2 <- lm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
+                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=driving.df)
 summary(lm.fit2)
 
 ```
@@ -332,13 +330,12 @@ Yes. *perse* variable has a statistically significant negative correlation with 
 
 
 ```{r}
-# Creating a panel with 'State' and 'Year' variables.
+
 pnldata <- pdata.frame(driving.df, c("state", "year"))
 
-model.fe <- plm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
-                d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
-                d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + 
-                perc14_24 + unem + vehicmilespc, data=pnldata, model = "within")
+model.fe <- plm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
+                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=pnldata, model = "within")
 summary(model.fe)
 
 ```
@@ -346,26 +343,21 @@ summary(model.fe)
 
 5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
 
-We will fit the random effects model to the data as shown below.
 
 ```{r}
 
-model.re <- plm(totfatrte ~  d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
-                d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
-                d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +
-                perc14_24 + unem + vehicmilespc, data=pnldata, model = "random")
+model.re <- plm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
+                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
+                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=pnldata, model = "random")
 summary(model.re)
 
 ```
 
-Comparing the random effect model to the fixed effect model using the Hausman's test.
-
-
 ```{r}
 phtest(model.fe, model.re)
 ```
+> Fixed effect model should be used
 
-p-value is statistically significant and we can reject the null hypothesis that the unobserved fixed effects are uncorrelated with the explanatory variables. Therefore, We will prefer the Fixed effect model instead of the random effects model in this scenario.
 
 
 6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
@@ -384,4 +376,14 @@ consistency of OLS estimators, but it does affect their efficiency. With positiv
 ```{r}
 pbgtest(model.fe)
 ```
+
+
+
+
+
+
+
+
+
+
 
