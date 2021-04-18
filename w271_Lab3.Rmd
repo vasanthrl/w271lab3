@@ -296,28 +296,34 @@ Yes. *perse* variable has a statistically significant at the 95% confidence inte
 We are not able to find any statistically significant effect of the primary seat belt law on the fatality rate based on the regression coefficients shown below. 
 
 ```{r}
-
+library(lmtest)
 lm.fit2 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
                 d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
                 d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + 
                 perc14_24 + unem + vehicmilespc, data=driving.df)
 summary(lm.fit2)
+
+bgtest(lm.fit2)
 ```
 
 In summary, including the pertinent explanatory variables improved the model fit, as seen in the adjusted R^2 (0.5963) and is better than the model in Q2. 
 
 4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
-**Coeefficients comparison for *bac08, bac10, perse, and sbprim* between pooled OLS and Fixed effects model**
+**Coeefficients comparison for *bac08, bac10, perse, and sbprim* between pooled OLS and Fixed effects model**   
+Effect of coefficients on fatality rate have gone down for *bac08 (-2.498 to -1.437), bac10 (-1.418 to -1.062 )* while they increased for *sbprim  (-0.07533 to -1.227) and perse(-0.62 to -1.152)* for the fixed effects model. Furthermore *sbprim* has become statistically significant in the Fixed effects model.
 
-Coefficients have gone down for the *bac08, bac10, perse, and sbprim* from -2.498, -1.418, -0.62, -0.07533 for the pooles OLS model to -1.437, -1.062, -1.152, -1.227 for the fixed effects model respectively. Furthermore *sbprim* has become statistically significant in the Fixed effects model.
-
-**Model reliability and assumptions**
-
+**Model reliability and assumptions**  
 Fixed effects model is more reliable than the pooled OLS model as it considers the panel data into account and models the total fatality rate of each state over time. 
 
-Pooled OLS model assumes that the individual specific effects are uncorrelated with the independent variables. This is a wrong assumption as there will be correlation between different observations within the same state. But Fixed effects model assumes that the individual specific effect are correlated with the independent variables and therefore is more reasonable in the current context than the pooled OLS model.
+For pooled OLS to be valid we need to ensure we account for serial correlation between the years and also account for heterogeneity bias due to omitted time-invariant variables (state). The pooled OLS requires the composite error to be uncorrelated with the explanatory variables. In this model we account for serial correlation across different time periods using the year dummies. However we are not accounting for heterogeneity bias due to unobserved fixed effect.
 
+For the fixed affect model, allows for correlation between unobserved fixed effect and explanatory variables. By applying fixed effects (at the state level), we are accounting for the unobserved time-invariant variables (road conditions, percentage of rural vs urban roads, compliance to laws etc specific to state that doesn't change much over time). The serial correlation across time is accounted for by the year dummies. 
+
+Fixed effect model is more reliable because it is accounting for the unobserved time-invariant variable which pooled OLS is not. 
+
+Our fixed effect model assumption is there could be correlation between the unobserved fixed effect (e.g. road conditions, percentage of rural vs urban roads, compliance to laws etc specific to state that doesn't change much over time) and explanatory variables (e.g. bac08, vehicmilespc). This assumption is reasonable because the EDA showed there is correlation between fatality rate and state, and traffic law adoption and state. 
+#TODO
 
 ```{r}
 # Creating a panel with 'State' and 'Year' variables.
@@ -342,27 +348,18 @@ model.re <- plm(totfatrte ~  d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89
                 d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
                 d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +
                 perc14_24 + unem + vehicmilespc, data=pnldata, model = "random")
-summary(model.re)
 
-```
-
-Comparing the random effect model to the fixed effect model using the Hausman's test.
-
-
-```{r}
 phtest(model.fe, model.re)
 ```
+#TODO add blurb on the usecases RE is applicable to and why it is not applicable here. 
+#TODO write out the model in text
 
-p-value is statistically significant and we can reject the null hypothesis that the unobserved fixed effects are uncorrelated with the explanatory variables. Therefore, We will prefer the Fixed effect model instead of the random effects model in this scenario.
-
+Hausman test checks whether the unique errors $u_i$ are correlated with the explanatory variables; the null hypothesis is they are not, and a lower p-value indicates that fixed effects model is better than random effects model. In the above test, p-value (2.727e-16) is statistically significant and we can reject the null hypothesis that the unobserved fixed effects are uncorrelated with the explanatory variables. Therefore, We will prefer the Fixed effect model instead of the random effects model in this scenario.
 
 6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
 
-
 The coefficient for the $vehicmilespc$ variable is 0.00094005 using the FE estimates and it is highly statistically significant. In other words, There will be an increase of 0.94 fatalities per 100k for an increase of 1000 vehicle miles driven per capita.
 
-
 7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
-
-
+#TODO read and update
 If there is Serial correlation then it will not affect the unbiasedness or consistency of OLS estimators, but it does affect their efficiency. With positive serial correlation, the OLS estimates of the standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. Much of the time serial correlation is viewed as the most important problem, because it usually has a larger impact on standard errors and the efficiency of estimators than does heteroskedasticity. The presence of heteroskedasticity, while not causing bias or inconsistency in the coefficients does invalidate the usual standard errors, t statistics, and F statistics.
