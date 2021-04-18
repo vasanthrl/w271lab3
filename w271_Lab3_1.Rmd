@@ -105,8 +105,7 @@ grid.arrange( totfatrte.hist, unem.hist, perc14_24.hist, vehicmilespc.hist, ncol
 ```
 The distribution looks approximately normal with some tail for $totfatrte$, $unem$, and $vehiclemilespc$. It looks normal with higher slope at the top and lower slope at the bottom for $perc14-24$. 
 
-Next, we examine the bivaraite relationship between some of the important explanatory variables and fatality rate. 
-
+Next, we examine the bivariate relationship between some of the important explanatory variables and fatality rate. 
 ```{r biv,warning=FALSE,message=FALSE}
 totfatrte.unem.scatter <- ggplot(driving.df, aes(unem, totfatrte)) + 
   geom_point() + 
@@ -121,12 +120,9 @@ totfatrte.vehicmilespc.scatter <- ggplot(driving.df, aes(vehicmilespc, totfatrte
   geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
   theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
 
-driving.df.mutate <- driving.df %>% 
-  mutate(bac08 = ifelse(bac08 > 0.5,1,0)) %>% 
-  mutate(bac10 = ifelse(bac10 > 0.5,1,0)) %>% 
-  mutate(perse = ifelse(perse > 0.5,1,0)) %>% 
-  mutate(sl70plus = ifelse(sl70plus > 0.5,1,0)) %>% 
-  mutate(gdl = ifelse(gdl > 0.5,1,0))
+driving.df.mutate <- driving.df %>% mutate(bac08 = ifelse(bac08 > 0.5,1,0)) %>% 
+  mutate(bac10 = ifelse(bac10 > 0.5,1,0)) %>% mutate(perse = ifelse(perse > 0.5,1,0)) %>% 
+  mutate(sl70plus = ifelse(sl70plus > 0.5,1,0)) %>% mutate(gdl = ifelse(gdl > 0.5,1,0)) %>% mutate(bacall = case_when(bac08>= 0.05 ~ 2, bac10 > 0.5 ~1, TRUE ~ 0 ))
 
 totfatrte.bac10.box <- ggplot(driving.df.mutate, aes(x = factor(bac10), y = totfatrte)) +
   geom_boxplot(aes(fill = factor(bac10))) + xlab("bac10") + theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
@@ -140,12 +136,13 @@ totfatrte.sbprim.box <- ggplot(driving.df.mutate, aes(x = factor(sbprim), y = to
 totfatrte.sl70plus.box <- ggplot(driving.df.mutate, aes(x = factor(sl70plus), y = totfatrte)) +
   geom_boxplot(aes(fill = factor(sl70plus)))+ xlab("sl70plus") + theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
   theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
-grid.arrange( totfatrte.bac10.box, totfatrte.perse.box, totfatrte.sbprim.box, totfatrte.sl70plus.box, totfatrte.unem.scatter, totfatrte.perc14_24.scatter, totfatrte.vehicmilespc.scatter,
-  ncol = 4, nrow = 2,
-  top="Bivariate Analysis of key Variables")
+totfatrte.bacall.box <- ggplot(driving.df.mutate, aes(x = factor(bacall), y = totfatrte)) +
+  geom_boxplot(aes(fill = factor(bacall)))+ xlab("bac 1=.1,2=.08 ") + theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
+grid.arrange( totfatrte.bac10.box, totfatrte.perse.box, totfatrte.sbprim.box, totfatrte.sl70plus.box, totfatrte.bacall.box, totfatrte.unem.scatter, totfatrte.perc14_24.scatter, totfatrte.vehicmilespc.scatter,  ncol = 4, nrow = 2,  top="Bivariate Analysis of key Variables")
 
 ```
-We see that blood alcohol limit 10 have a muted effect while per se , primary seatbelt have reducing effect on the fatality rate. Also note the higher fatality rate on the states with speed limit 70 and above or none. We also see a slight positive correlation between fatality rate and variables $unem$, $perc14_24$ and $vehicmilespc$.
+We see that blood alcohol limit 10 has a muted effect while per se and primary seatbelt laws have reducing effect on the fatality rate. In addition, fatality rate with bac08 is slightly lower than bac10. Also note the higher fatality rate on the states with speed limit 70 and above or none.  We also see a slight positive correlation between fatality rate and variables $unem$, $perc14_24$ and $vehicmilespc$.
 
 Then, to examine both the overall fatality pattern and individual fixed effect of US States across time, we'll analyze the aggregate of traffic laws in US across time and across states. 
 
@@ -155,59 +152,43 @@ Below we analyze the fatality rate change by year and overall change by state .
 traffic.yearly.aggr <- data %>%   group_by(year) %>%  summarise_at(vars(totfatrte, nghtfatrte,wkndfatrte), funs(mean))
 
 #fatality change by state 
-traffic.state.perc.aggr <- data.with.name %>%
-  group_by(shortname) %>%
-  summarise_at(vars(totfatrte,nghtfatrte,wkndfatrte), funs(mean))
+traffic.state.perc.aggr <- data.with.name %>% group_by(shortname) %>% summarise_at(vars(totfatrte,nghtfatrte,wkndfatrte), funs(mean))
 
 year.plot <- ggplot(traffic.yearly.aggr, aes(year, totfatrte)) +
-  geom_bar(aes(fill = factor(year)), position = "dodge", stat="identity") + ggtitle("Fatalities by year") + theme_gray() + scale_fill_hue(c=45,l=80) +
+  geom_bar(aes(fill = factor(year)), position = "dodge", stat="identity") + ggtitle("Average Fatality Rate by year") + theme_gray() + scale_fill_hue(c=45,l=80) +
   #geom_abline(intercept, slope, linetype, color, size) + 
   geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + geom_text(data = traffic.yearly.aggr, aes(x = year, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none")
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "") + labs (x = "")
 
 state.plot <- ggplot(traffic.state.perc.aggr, aes(shortname, totfatrte)) +
-  geom_bar(aes(fill = factor(shortname)), position = "dodge", stat="identity") + ggtitle("Fatalities by state") +    theme_gray() + 
+  geom_bar(aes(fill = factor(shortname)), position = "dodge", stat="identity") + ggtitle("Average Fatality rate By state") +    theme_gray() + 
   scale_fill_hue(c=45,l=80) + theme(plot.title = element_text(size = 8, hjust = 0.5)) + 
   theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + geom_text(data = traffic.state.perc.aggr, aes(x = shortname, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5))
+  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + geom_text(data = traffic.state.perc.aggr, aes(x = shortname, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5)) + labs (x = "")
 
 conditional_plot = function(data, plotvar, condvar, title) {
   g <- ggplot(data, aes(as.factor(condvar), plotvar, color = as.factor(condvar))) 
-  g + geom_boxplot() + geom_jitter(width = 0.2) + ggtitle(title) + theme(axis.text.x = element_text(angle = 45, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
+  g + geom_boxplot() + ggtitle(title) + theme(axis.text.x = element_text(angle = 45, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "")
 }
 
-# yIndex by year (Heterogeineity across year)
-cplot.1 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$year, "Totalfatrte by year")
-
-# yIndex by country (Heterogeineity across countries)
-cplot.2 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$name, "Totalfatrte by State")
-
-cplot.1 <- data.with.name %>%
-  ggplot(aes(x = factor(year), y = totfatrte,color = as.factor(year))) +  
-  geom_boxplot() + ggtitle("Totalfatrte by Year") + theme(axis.text.x = element_text(angle = 45, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "")
-
-cplot.2 <- data.with.name %>%
-  ggplot(aes(x = factor(shortname), y = totfatrte,color = as.factor(name))) +  
-  geom_boxplot() + ggtitle("Totalfatrte by State") + theme(axis.text.x = element_text(angle = 45, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "")
+cplot.1 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$year, "Fatality Rate by Year By State")
+cplot.2 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$shortname, "Fatality Rate by State By Year")
 
 grid.arrange(year.plot, state.plot, nrow = 2,  ncol = 1);grid.arrange(cplot.1, cplot.2, nrow = 2,  ncol = 1)
-
 ```
-We can see that the fatality rate is largely decreasing from 1980 to 2004. The fatality rates range from ~9 to ~34. Wyoming, New Mexico, Mississippi, Montana, and South Carolina are the states with highest fatality rates while New York, New Jersey and Rhode Island are the states with lowest fatality rates. The pattern shows that the states with more rural roads have higher fatality rates - the geography and road conditions are thus important omitted variables in the dataset. In addition, the fataility split by cause (drunk driving, speeding) by state by year could be an important predictor. Another omitted variable could be the a measure of compliance to the traffic laws - speed limit, seat belt -  at the state level. 
+We can see that the fatality rate is largely decreasing from 1980 to 2004. The overall fatality rates range from ~9 to ~34 between states. *Wyoming*, *New Mexico*, *Mississippi*, *Montana*, and *South Carolina* are the states with highest fatality rates while *New York*, *New Jersey* and *Rhode Island* are the states with lowest fatality rates. The pattern shows that the states with more rural roads have higher fatality rates - the geography and road conditions are thus important omitted variables in the dataset. In addition, the fataility split by cause (drunk driving, speeding) by state by year could be an important predictor. Another omitted variable could be the a measure of compliance to the traffic laws - speed limit, seat belt -  at the state level. 
 
-The boxplots graph shows there is heterogeneity across states, but very little heterogenetiy across years.
-
-Next we analyze how the fatality rates varied over the years, in individual states. 
+The boxplots graph shows there is heterogeneity across states, but very little heterogenetiy across years. Next we analyze how the fatality rates varied over the years, in individual states. 
 ```{r}
 xyplot(totfatrte ~ year | shortname, data=data.with.name, as.table=T)
 ```
-The above xyplot confirms that most of the States shows an overall decrease in the traffic fatality rate, except states like *Mississippi* . We can see that New Mexico(NM) and Wyoming(WY) has high variance in the data, with NM consistently reducing the traffic fatality rate over years. However, WY reduced the fatality rate from 80's to mid 90's and had a gradual increase after. One interesting point is that the traffic fatality rate is not dependent on the state area or population - the top 2 states with size and population, Texas and California, are not amoing the top states in traffic fatality rate.
+The above xyplot confirms that most of the States shows an overall decrease in the traffic fatality rate, except states like *Mississippi* . We can see that New Mexico(NM) and Wyoming(WY) has high variance in the data, with NM consistently reducing the traffic fatality rate over years. However, WY reduced the fatality rate from 80's to mid 90's and had a gradual increase after. One interesting point is that the traffic fatality rate is not dependent on the state area or population - the top 2 states with size and population, *Texas* and *California*, are not among the top states in traffic fatality rate.
 
 Below, we explore how the traffic laws over the years across states, and whether they show a correlation with fatality rate. We first plot the fatality rate over years, and then plot the count of states that adopt the traffic laws, grouped by year and specific law after.  We hypothesize that the fatality rate is influenced the most by drinking and overspeeding and proceed to examine the applicable laws.
 
 ```{r eda.drink,warning=FALSE,message=FALSE}
 # summarize the number of states adopting specific traffic laws
-data <- data %>%  mutate( sball = case_when(sbprim + sbsecon >= 0.5  ~ 1,TRUE ~ 0 ))
+data <- data %>%  mutate(sball = case_when(sbprim + sbsecon >= 0.5  ~ 1,TRUE ~ 0 ))
 bac.df <- data %>% group_by(year) %>%
 summarise(bac10 = sum(bac10), bac08 = sum(bac08), bac.all = sum(bac08 + bac10), perse = sum(perse), sbprim = sum(sbprim), sbsecon = sum(sbsecon), gdl = sum(gdl), sl70plus = sum(sl70plus), totfatrte = mean(totfatrte), sball=sum(sball)) 
 
@@ -233,87 +214,71 @@ Over the years, more states are adopting stricter alcohol limits. In 2004, over 
 Lets proceed to examine the individual state behavior in the panel. First, we'll examine how the traffic fatality rates changed over years for the first 3 States from the top and bottom of the fatality rate. 
 
 ```{r 1 EDA3}
-#fatality change by state 
+#Top 3 and Bottom 3 states in overall fatality scale
 traffic.state.aggr <- data.with.name %>%   group_by(shortname) %>%   summarise_at(vars(totfat, nghtfat,wkndfat), funs(sum))
-
 top.3.fatalities <- traffic.state.perc.aggr %>%  filter(rank(desc(totfatrte))<=3) %>% arrange(desc(totfatrte))
-
 bottom.3.fatalities <- traffic.state.perc.aggr %>% filter(rank((totfatrte))<=3) %>% arrange((totfatrte))
-
-cbind(top.3.fatalities[,1:2],bottom.3.fatalities[,1:2])
-
 data.top.filtered <- data.with.name %>% filter(shortname %in% c("WY"))
 data.bottom.filtered <- data.with.name %>% filter(shortname %in% c("RI"))
-
 data.merged <- union(data.top.filtered,data.bottom.filtered)
+
+cbind(top.3.fatalities[,1:2],bottom.3.fatalities[,1:2])
 ```
 
-The top 3 are Wyoming, New Mexico and Mississippi. The bottom 3 are Rhode Island, New York and Massachussets. To put this in context, in 2004, in Wyoming, the probability of dying in a motor vehicle accident is nearly 5 times as high as in Rhode Island, the state with the lowest death rate. Below, we see the average fatality rate for each state across years.
+The top 3 are Wyoming, New Mexico and Mississippi. The bottom 3 are Rhode Island, New York and Massachussets. To put this in context, in 2004, in Wyoming, the probability of dying in a motor vehicle accident is nearly 5 times as high as in Rhode Island, the state with the lowest death rate. Below, we see the how the  fatality rate varies for seat belt, bac each state across years.
 
 ```{r 1.EDA.panelplots,warning=FALSE,message=FALSE}
 df.transformed <- data.merged %>%   mutate( perse = case_when(perse >= 0.5  ~ 1,TRUE ~ 0),bacat = case_when(bac10+bac08 >= 0.5  ~ 1,TRUE ~ 0), sball = case_when(sbprim + sbsecon >= 0.5  ~ 1,TRUE ~ 0 ),gdl = case_when(gdl >= 0.5  ~ 1,TRUE ~ 0 ))
 
-g.1 <- ggplot(df.transformed, aes(as.factor(perse), totfatrte)) + geom_boxplot(aes(fill = factor(perse))) + geom_jitter(width = 0.2) + ggtitle("Per Se Law and Fatality Rate Change for Top and Bottom States") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
+g.1 <- ggplot(df.transformed, aes(as.factor(perse), totfatrte)) + geom_boxplot(aes(fill = factor(perse))) + geom_jitter(width = 0.2) + ggtitle("Per Se Law vs Fatality for WY and RI") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
 
-g.2 <- ggplot(df.transformed, aes(as.factor(bacat), totfatrte)) + geom_boxplot(aes(fill = factor(bacat))) + geom_jitter(width = 0.2) + ggtitle("Bac and Fatality Rate Change for Top and Bottom States") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs(y="")
+g.2 <- ggplot(df.transformed, aes(as.factor(bacat), totfatrte)) + geom_boxplot(aes(fill = factor(bacat))) + geom_jitter(width = 0.2) + ggtitle("Bac vs Fatality  for WY and RI") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs(y="")
 
-grid.arrange(g.1, g.2, nrow = 1,  ncol = 2) 
+g.3 <- ggplot(df.transformed, aes(as.factor(seatbelt), totfatrte)) + geom_boxplot(aes(fill = factor(seatbelt))) + geom_jitter(width = 0.2) + ggtitle("Seatbelt and Fatality change for WY and RI") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
 
-g.1 <- ggplot(df.transformed, aes(as.factor(sball), totfatrte)) + geom_boxplot(aes(fill = factor(sball))) + geom_jitter(width = 0.2) + ggtitle("Fatality Rate Change for Top and Bottom States") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
+g.4 <- ggplot(df.transformed, aes(as.factor(gdl), totfatrte)) + geom_boxplot(aes(fill = factor(gdl))) + geom_jitter(width = 0.2) + ggtitle("GDL vs Fatality for WY and RI") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs(y="")
 
-g.2 <- ggplot(df.transformed, aes(as.factor(gdl), totfatrte)) + geom_boxplot(aes(fill = factor(gdl))) + geom_jitter(width = 0.2) + ggtitle("Fatality Rate Change for Top and Bottom States") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs(y="")
+grid.arrange(g.1, g.2, nrow = 1,  ncol = 2);grid.arrange(g.3, g.4, nrow = 1,  ncol = 2) 
+```
 
-grid.arrange(g.1, g.2, nrow = 1,  ncol = 2) 
+We can see that WY has lower fatality rate in the years they adopted the Per Se, Bac, and Seatbelt laws. They are yet to adopt the gdl law (perhaps they should!). RI shows a similar pattern, eventhough the fatality rate was already low.  
 
+Now we will look at how fatality rate differs between 1980 and 2004 for each state.
+```{r 1.EDA.year80084,warning=FALSE,message=FALSE}
 df.80.04 <- data.with.name %>% filter(year %in% c('1980','2004')) %>% dplyr::select(year,shortname,totfatrte) 
 
 ggplot(df.80.04, aes(shortname, totfatrte, group = year, colour = as.factor(year))) + 
-  geom_line(aes(y=totfatrte), size = 2) + ggtitle("Growth Curve by Year") + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) + labs(x="")
+  geom_line(aes(y=totfatrte), size = 1) + ggtitle("Fatality Rates for 1980 and 2004 By State") + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) + labs(x="") + theme(plot.title = element_text(size = 10, hjust = 0.5)) + labs(color ="Year")
 ```
-
-We can see that in the years WY has lower fatality rate in the years they adopted the Per Se, Bac, and Seatbelt laws. They are yet to adopt the gdl law (perhaps they should!). RI shows a similar pattern, eventhough the fatality rate was already low. 
-
-Thus both the overall and state level EDA indicates that there is a reduction in fatality rate that is consistent with traffic laws adoption.
+For most of the states, fatality rate in 2004 is less than 1980 barring exceptions like *Arkansas(AR)* and *Mississippi(MS)*. Thus both the overall and state level EDA indicates that there is a reduction in fatality rate that is consistent with traffic laws adoption.
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
-*totfatrte* defines the total fatalities per 100,000 population.**<<TODO>>**
+The dependent variable *totfatrte* is defined as the total fatalities per 100,000 population, grouped by the index variables year and state. The average of this *totfatrte* variable per year is computed for EDA in variable $traffic.yearly.aggr$ and plotted using $year.plot$. 
 
 
-```{r}
-yearlyavg <- aggregate(totfatrte~year, driving.df, mean)
-
-# Printing the yearly average for total fatality rate
-yearlyavg
-
-# Plotting the yearly total fatality rate
-ggplot(yearlyavg) + 
-  geom_line(
-    mapping = aes(x = year, y = totfatrte)
-)
+```{r 2.plot,warning=FALSE,message=FALSE}
+year.plot
 ```
 
+Let's estimating the linear regression for the dummy variables from 1981 to 2004 below. This model explains the impact of time on the total fatality rate. All the dummy variables to be highly statistically significant except for 1981. We see a downward trending total fatality rate increasing with time and it proves that the driving became safer over this period.
 
 
 ```{r}
-lm.fit1 <- lm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
-                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
-                      d00+d01+d02+d03+d04, data=driving.df)
+lm.fit1 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 +
+                      d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 +
+                      d00 + d01 + d02 + d03 + d04, data=driving.df)
 summary(lm.fit1)
 ```
-
-
 
 3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
 
 ```{r}
 
-lm.fit2 <- lm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
-                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
-                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=driving.df)
+lm.fit2 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
+                d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + perc14_24 + unem + vehicmilespc, data=driving.df)
 summary(lm.fit2)
-
 ```
 *bac10* is defined as the	blood alcohol limit of .10
 *bac08* is defined as the	blood alcohol limit of .08
@@ -330,12 +295,13 @@ Yes. *perse* variable has a statistically significant negative correlation with 
 
 
 ```{r}
-
+# Creating a panel with 'State' and 'Year' variables.
 pnldata <- pdata.frame(driving.df, c("state", "year"))
 
-model.fe <- plm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
-                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
-                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=pnldata, model = "within")
+model.fe <- plm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
+                d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
+                d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + 
+                perc14_24 + unem + vehicmilespc, data=pnldata, model = "within")
 summary(model.fe)
 
 ```
@@ -343,21 +309,26 @@ summary(model.fe)
 
 5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
 
+We will fit the random effects model to the data as shown below.
 
 ```{r}
 
-model.re <- plm(totfatrte ~ d81+d82+d83+d84+d85+d86+d87+d88+d89+
-                      d90+d91+d92+d93+d94+d95+d96+d97+d98+d99+
-                      d00+d01+d02+d03+d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +  perc14_24 + unem + vehicmilespc, data=pnldata, model = "random")
+model.re <- plm(totfatrte ~  d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
+                d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
+                d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl +
+                perc14_24 + unem + vehicmilespc, data=pnldata, model = "random")
 summary(model.re)
 
 ```
 
+Comparing the random effect model to the fixed effect model using the Hausman's test.
+
+
 ```{r}
 phtest(model.fe, model.re)
 ```
-> Fixed effect model should be used
 
+p-value is statistically significant and we can reject the null hypothesis that the unobserved fixed effects are uncorrelated with the explanatory variables. Therefore, We will prefer the Fixed effect model instead of the random effects model in this scenario.
 
 
 6. (10%) Suppose that *vehicmilespc*, the number of miles driven per capita, increases by $1,000$. Using the FE estimates, what is the estimated effect on *totfatrte*? Please interpret the estimate.
@@ -376,14 +347,4 @@ consistency of OLS estimators, but it does affect their efficiency. With positiv
 ```{r}
 pbgtest(model.fe)
 ```
-
-
-
-
-
-
-
-
-
-
 
