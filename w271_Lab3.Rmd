@@ -158,18 +158,18 @@ traffic.yearly.aggr <- data %>%   group_by(year) %>%  summarise_at(vars(totfatrt
 traffic.state.perc.aggr <- data.with.name %>% group_by(shortname) %>% summarise_at(vars(totfatrte,nghtfatrte,wkndfatrte), funs(mean))
 
 #common functions
-overall_plot = function(data,condvar,title) {
+overall_plot = function(data,condvar,title,angle) {
   g <- ggplot(data, aes(condvar, totfatrte)) +
   geom_bar(aes(fill = factor(condvar)), position = "dodge", stat="identity") + ggtitle(title) + theme_gray() + scale_fill_hue(c=45,l=80) +
-   geom_text(data = data, aes(x = condvar, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5)) + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "",y= "Fatality Rate")
+   geom_text(data = data, aes(x = condvar, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5)) + theme(axis.text.x = element_text(angle = angle, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "",y= "Fatality Rate")
 }
 conditional_plot = function(data, plotvar, condvar, title) {
   g <- ggplot(data, aes(as.factor(condvar), plotvar, color = as.factor(condvar))) 
   g + geom_boxplot() + ggtitle(title) + theme(axis.text.x = element_text(angle = 45, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "", y= "Fatality Rate")
 }
 
-year.plot.1 <- overall_plot(traffic.yearly.aggr,traffic.yearly.aggr$year,"Average Fatality Rate by year") + geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
-state.plot.1 <- overall_plot(traffic.state.perc.aggr,traffic.state.perc.aggr$shortname,"Average Fatality Rate by State")
+year.plot.1 <- overall_plot(traffic.yearly.aggr,traffic.yearly.aggr$year,"Average Fatality Rate by year",0) + geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+state.plot.1 <- overall_plot(traffic.state.perc.aggr,traffic.state.perc.aggr$shortname,"Average Fatality Rate by State",90)
 
 cplot.1 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$year, "Fatality Rate by Year By State")
 cplot.2 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$shortname, "Fatality Rate by State By Year")
@@ -260,7 +260,7 @@ Thus both the overall and state level EDA indicates that there is a reduction in
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
-The dependent variable *totfatrte* is defined as the total fatalities per 100,000 population, grouped by the index variables year and state. The average of this *totfatrte* variable per year is computed for EDA in variable $traffic.yearly.aggr$ and plotted using $year.plot$. 
+The dependent variable *totfatrte* is defined as the total fatalities per 100,000 population, grouped by the index variables year and state. The average of this *totfatrte* variable per year is computed for EDA in variable $traffic.yearly.aggr$ and plotted using $year.plot.1$. 
 
 
 ```{r 2.plot,warning=FALSE,message=FALSE}
@@ -276,14 +276,14 @@ lm.fit1 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 +
 summary(lm.fit1)
 ```
 
-This is a pooled OLS model that explains the impact of time on the total fatality rate. The year dummy variables are highly statistically significant except for 1981. We see total fatality rate trending down with time and it proves that the *driving became safer over this period*. We see that compared to 1980, for each year we have lower fatality rate. The coefficients also indicate that compared to fatality rate between 83 and 85, we see a higher fatality rate for years 86 to 88. The adjusted R^2 0.1098 indicates the model is not a good fit. Diagnostic plots (not shown here due to space constraints) indicate that residuals are not normally distributed. Detailed explanation of the pooled OLS model is given in question 4.
+This is a pooled OLS model that explains the impact of time on the total fatality rate. The year dummy variables are highly statistically significant except for 1981. We see total fatality rate trending down with time and it proves that the *driving became safer over this period*. We see that compared to 1980, for each year we have lower fatality rate. The coefficients also indicate that compared to fatality rate between 83 and 85, we see a higher fatality rate for years 86 to 88. The adjusted $R^2$ 0.1098 indicates the model is not a good fit. Diagnostic plots (not shown here due to space constraints) indicate that residuals are not normally distributed. Detailed explanation of why the pooled OLS model is not a good fit for this panel dataset is given in question 4.
 
 3. (15%) Expand your model in *Exercise 2* by adding variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl, perc14_24, unem, vehicmilespc*, and perhaps *transformations of some or all of these variables*. Please explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. How are the variables *bac8* and *bac10* defined? Interpret the coefficients on *bac8* and *bac10*. Do *per se laws* have a negative effect on the fatality rate? What about having a primary seat belt law? (Note that if a law was enacted sometime within a year the fraction of the year is recorded in place of the zero-one indicator.)
 
 **Is Transformation needed?**   
-First, we looked at the predicted variable *totfatrte* for possible transformations. EDA showed that the variale is already weighted by state population and ranged from ~6 to ~50, and was normally distributed. Hence we did not apply any transformations on the variable. 
+First, we looked at the predicted variable *totfatrte* for possible transformations. EDA showed that the variable is already weighted by state population and ranged from ~6 to ~50, and was normally distributed. Hence we did not apply any transformations on the variable. 
 
-The variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl* define the year in which the specific law became effective. It ranges from 0-1 with decimals as the law could  change in the middle of the year. One possible transformation is to round up the fractions into 0 or 1 - but we choose to not round them up, as we will lose precision if the law was adopted in the middle of the year. 
+The variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl* define the year in which the specific law became effective. It ranges from 0-1 with decimals as the law could  change in the middle of the year. One possible transformation is to round the fractions into 0 or 1 - but we choose to not round them up, as we will lose precision if the law was adopted in the middle of the year. 
 
 Variables  *perc14_24, unem, vehicmilespc* are already normalized and so no transformation is necessary. Note that *vehicmilespc* is a candidate for log transformation - but because the variable is already a rate, and we lose interpretability with log transformation, we retain the original format. 
 
@@ -291,10 +291,10 @@ Variables  *perc14_24, unem, vehicmilespc* are already normalized and so no tran
 *bac10* is defined as the	blood alcohol limit of .10 and *bac08* is defined as the	blood alcohol limit of .08. Both the variables *bac08* (-2.498) and *bac10* (-1.418) have  negative coefficients, with *bac08* having larger negative coefficient (thus larger impact) on reducing the fatality rate. They are statistically significant and it implies that they have a strong negative correlation to the total fatality rate. This pattern was observed in EDA where the boxplot showed lower fatality rate for *bac08* than *bac10.* The takeaway is, if we come up with a stricter law and decrease the blood alcohol limit to .08 then the fatalities rate decreases more.
 
 **Effect of perse law on fatality rate**     
-Yes. *perse* variable has a statistically significant at the 95% confidence interval level, showing negative correlation with the total fatality rate. The coefficient value is -0.6201 which implies a small change in the rate.
+Yes. *perse* variable (p-value 0.037791) has a statistically significant at the 95% confidence interval level, showing negative correlation with the total fatality rate. The coefficient value is -0.6201 which implies a small change in the rate.
 
 **Effect of primary seat belt law on fatality rate**   
-We are not able to find any statistically significant effect of the primary seat belt law on the fatality rate based on the regression coefficients shown below. 
+Primary seatbelt has a negative coeffient (-7.533e-02) indicating that adoption of primary seatbelt reduces fatality rate. However, with a high p-value (0.878032), we are not able to find any statistically significant effect of the primary seat belt law on the fatality rate based on the regression coefficients shown below. 
 
 ```{r lm2,warning=FALSE,message=FALSE}
 library(lmtest)
@@ -307,7 +307,7 @@ summary(lm.fit2)
 bgtest(lm.fit2)
 ```
 
-In summary, including the pertinent explanatory variables improved the model fit, as seen in the adjusted R^2 (0.5963) and is better than the model in Q2. 
+In summary, including the pertinent explanatory variables improved the model fit, as seen in the adjusted $R^2$ (0.5963) and is better than the model in Q2. 
 
 4. (15%) Reestimate the model from *Exercise 3* using a fixed effects (at the state level) model. How do the coefficients on *bac08, bac10, perse, and sbprim* compare with the pooled OLS estimates? Which set of estimates do you think is more reliable? What assumptions are needed in each of these models?  Are these assumptions reasonable in the current context?
 
@@ -323,7 +323,7 @@ For the fixed affect model, allows for correlation between unobserved fixed effe
 
 Fixed effect model is more reliable because it is accounting for the unobserved time-invariant variable which pooled OLS is not. 
 
-Our fixed effect model assumption is there could be correlation between the unobserved fixed effect (e.g. road conditions, percentage of rural vs urban roads, compliance to laws etc specific to state that doesn't change much over time) and explanatory variables (e.g. bac08, vehicmilespc). This assumption is reasonable because the EDA showed there is correlation between fatality rate and state, and traffic law adoption and state. 
+Our fixed effect model assumption is that there could be correlation between the unobserved fixed effect (e.g. road conditions, percentage of rural vs urban roads, compliance to laws etc specific to state that doesn't change much over time) and explanatory variables (e.g. bac08, vehicmilespc). This assumption is reasonable because the EDA showed there is correlation between fatality rate and state, and traffic law adoption and state. 
 
 ```{r plm,warning=FALSE,message=FALSE}
 # Creating a panel with 'State' and 'Year' variables.
