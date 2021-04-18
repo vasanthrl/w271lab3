@@ -45,6 +45,10 @@ dim(driving.df)
 table(data$state)
 table(data$year)
 ```
+### Introduction  
+
+Traffic fatality in the United States is substantial. There have been laws and regulations aimed at reducing the fatality rates. In this project, we examine the impact of laws and other demographic factors on fatality rate over years.
+
 The Dataset is panel data, that contains observations about different US states from year 1980 to 2004. There are 1200 observations in total, with 56 columns . The data has 25 observations each, one per year, from 48 continental states except state ids 2,9 and 12 (which we will later identify as Alaska, District Of Columbia and Hawaii that are not part of continental US States). All variables are observed for all states and over all time periods, hence the panel is balanced. Important variables are:
 
 **Panel Index**   
@@ -317,7 +321,7 @@ Effect of coefficients on fatality rate have gone down for *bac08 (-2.498 to -1.
 **Model reliability and assumptions**  
 Fixed effects model is more reliable than the pooled OLS model as it considers the panel data into account and models the total fatality rate of each state over time. 
 
-For pooled OLS to be valid we need to ensure we account for serial correlation between the years and also account for heterogeneity bias due to omitted time-invariant variables (state). The pooled OLS requires the composite error to be uncorrelated with the explanatory variables. In this model we account for serial correlation across different time periods using the year dummies. However we are not accounting for heterogeneity bias due to unobserved fixed effect.
+For pooled OLS to be valid we need to ensure we account for serial correlation between the years and also account for heterogeneity bias due to omitted time-invariant variables as well as heterogeneity bias across states. The pooled OLS requires the composite error to be uncorrelated with the explanatory variables. In this model we account for serial correlation across different time periods using the year dummies. However we are not accounting for heterogeneity bias due to unobserved fixed effects as well as heterogeneity bias across states. That is, homoskedasticity assumption is violated. 
 
 For the fixed affect model, allows for correlation between unobserved fixed effect and explanatory variables. By applying fixed effects (at the state level), we are accounting for the unobserved time-invariant variables (road conditions, percentage of rural vs urban roads, compliance to laws etc specific to state that doesn't change much over time). The serial correlation across time is accounted for by the year dummies. 
 
@@ -365,8 +369,8 @@ Hausman test checks whether the unique errors $u_i$ are correlated with the expl
 The coefficient for the $vehicmilespc$ variable is 0.00094005 using the FE estimates and it is highly statistically significant. In other words, There will be an increase of 0.94 fatalities per 100k for an increase of 1000 vehicle miles driven per capita.
 
 7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?  
-#TODO read and update  
-If there is Serial correlation then it will not affect the unbiasedness or consistency of OLS estimators, but it does affect their efficiency. With positive serial correlation, the OLS estimates of the standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. Much of the time serial correlation is viewed as the most important problem, because it usually has a larger impact on standard errors and the efficiency of estimators than does heteroskedasticity. The presence of heteroskedasticity, while not causing bias or inconsistency in the coefficients does invalidate the usual standard errors, t statistics, and F statistics. To address this, the usual OLS standard errors, t statistics, and F statistics can be adjusted to allow for the presence of heteroskedasticity of unknown form (Heteroskedasticity-robust statistics)
+
+If there is Serial correlation then it will not affect the unbiasedness or consistency of OLS estimators, but it does affect their efficiency. With positive serial correlation, the OLS estimates of the standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. Much of the time serial correlation is viewed as the most important problem, because it usually has a larger impact on standard errors and the efficiency of estimators than does heteroskedasticity. The presence of heteroskedasticity, while not causing bias or inconsistency in the coefficients does invalidate the usual standard errors, t statistics, and F statistics. To address this, the usual OLS standard errors, t statistics, and F statistics can be adjusted to allow for the presence of serial correlation or heteroskedasticity (Heteroskedasticity-and autocorrelation-robust statistics).
 
 **Conclusion**
-Traffic fatalities from crashes in the United States substantial. Good Statistical models can identify important predictors that can help authorities to direct focus and resources, and policy analysis.
+In summary, changes in traffic laws decreased traffic fatality. In particular, stricter blood alcohol limit, primary seatbelt and per se laws are most effective in reducing fatality. State policy makers should take steps to enact the laws uniformly across states and ensure compliance.
