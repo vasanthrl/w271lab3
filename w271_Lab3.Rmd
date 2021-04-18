@@ -103,6 +103,7 @@ perc14_24.hist <- ggplot(driving.df, aes(x = perc14_24)) +  geom_histogram(bins 
 vehicmilespc.hist <- ggplot(driving.df, aes(x = vehicmilespc)) +  geom_histogram(bins = 30, fill="#0072B2", colour="black") + xlab("vehicmilespc") + ylab("counts")
 grid.arrange( totfatrte.hist, unem.hist, perc14_24.hist, vehicmilespc.hist, ncol = 2, nrow = 2, top="Univariate Analysis of key Variables")
 ```
+
 The distribution looks approximately normal with some tail for $totfatrte$, $unem$, and $vehiclemilespc$. It looks normal with higher slope at the top and lower slope at the bottom for $perc14-24$. 
 
 Next, we examine the bivariate relationship between some of the important explanatory variables and fatality rate. 
@@ -142,6 +143,7 @@ totfatrte.bacall.box <- ggplot(driving.df.mutate, aes(x = factor(bacall), y = to
 grid.arrange( totfatrte.bac10.box, totfatrte.perse.box, totfatrte.sbprim.box, totfatrte.sl70plus.box, totfatrte.bacall.box, totfatrte.unem.scatter, totfatrte.perc14_24.scatter, totfatrte.vehicmilespc.scatter,  ncol = 4, nrow = 2,  top="Bivariate Analysis of key Variables")
 
 ```
+
 Note that fractions are rounded for representing box plots. We see that blood alcohol limit 10 has a muted effect while per se and primary seatbelt laws have reducing effect on the fatality rate. In addition, fatality rate with bac08 is slightly lower than bac10. Also note the higher fatality rate on the states with speed limit 70 and above or none.  We are also exploring the relationship between fatality rate and demographic variables $unem$, $perc14_24$ and $vehicmilespc$ to understand the impact.
 
 Then, to examine both the average fatality pattern over the years, and individual fixed effect of US States across time, we'll analyze the aggregate of traffic laws in US across time and across states. 
@@ -155,34 +157,33 @@ traffic.yearly.aggr <- data %>%   group_by(year) %>%  summarise_at(vars(totfatrt
 #fatality change by state 
 traffic.state.perc.aggr <- data.with.name %>% group_by(shortname) %>% summarise_at(vars(totfatrte,nghtfatrte,wkndfatrte), funs(mean))
 
-year.plot <- ggplot(traffic.yearly.aggr, aes(year, totfatrte)) +
-  geom_bar(aes(fill = factor(year)), position = "dodge", stat="identity") + ggtitle("Average Fatality Rate by year") + theme_gray() + scale_fill_hue(c=45,l=80) +
-  #geom_abline(intercept, slope, linetype, color, size) + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + geom_text(data = traffic.yearly.aggr, aes(x = year, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "") + labs (x = "",y= "Fatality Rate")
-
-state.plot <- ggplot(traffic.state.perc.aggr, aes(shortname, totfatrte)) +
-  geom_bar(aes(fill = factor(shortname)), position = "dodge", stat="identity") + ggtitle("Average Fatality rate By state") +    theme_gray() + 
-  scale_fill_hue(c=45,l=80) + theme(plot.title = element_text(size = 8, hjust = 0.5)) + 
-  theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + geom_text(data = traffic.state.perc.aggr, aes(x = shortname, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5)) + labs (x = "",y= "Fatality Rate")
-
+#common functions
+overall_plot = function(data,condvar,title) {
+  g <- ggplot(data, aes(condvar, totfatrte)) +
+  geom_bar(aes(fill = factor(condvar)), position = "dodge", stat="identity") + ggtitle(title) + theme_gray() + scale_fill_hue(c=45,l=80) +
+   geom_text(data = data, aes(x = condvar, y = totfatrte, label = round(totfatrte,1)), size = 3,angle = 90, position = position_stack(vjust = .5)) + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "",y= "Fatality Rate")
+}
 conditional_plot = function(data, plotvar, condvar, title) {
   g <- ggplot(data, aes(as.factor(condvar), plotvar, color = as.factor(condvar))) 
   g + geom_boxplot() + ggtitle(title) + theme(axis.text.x = element_text(angle = 45, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "", y= "Fatality Rate")
 }
 
+year.plot.1 <- overall_plot(traffic.yearly.aggr,traffic.yearly.aggr$year,"Average Fatality Rate by year") + geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
+state.plot.1 <- overall_plot(traffic.state.perc.aggr,traffic.state.perc.aggr$shortname,"Average Fatality Rate by State")
+
 cplot.1 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$year, "Fatality Rate by Year By State")
 cplot.2 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$shortname, "Fatality Rate by State By Year")
 
-grid.arrange(year.plot, state.plot, nrow = 2,  ncol = 1);grid.arrange(cplot.1, cplot.2, nrow = 2,  ncol = 1)
+grid.arrange(year.plot.1, state.plot.1, nrow = 2,  ncol = 1);grid.arrange(cplot.1, cplot.2, nrow = 2,  ncol = 1)
 ```
+
 We can see that the fatality rate is largely decreasing from 1980 to 2004. The overall fatality rates range from ~9 to ~34 between states. *Wyoming*, *New Mexico*, *Mississippi*, *Montana*, and *South Carolina* are the states with highest fatality rates while *New York*, *New Jersey* and *Rhode Island* are the states with lowest fatality rates. The pattern shows that the states with more rural roads have higher fatality rates - the geography and road conditions are thus important omitted variables in the dataset. In addition, the fataility split by cause (drunk driving, speeding) by state by year could be an important predictor. Another omitted variable could be the a measure of compliance to the traffic laws - speed limit, seat belt -  at the state level. 
 
 The boxplots graph shows there is heterogeneity across states, but very little heterogenetiy across years. Next we analyze how the fatality rates varied over the years, in individual states. 
-```{r}
+```{r xyplot,warning=FALSE,message=FALSE}
 xyplot(totfatrte ~ year | shortname, data=data.with.name, as.table=T)
 ```
+
 The above xyplot confirms that most of the States shows an overall decrease in the traffic fatality rate, except states like *Mississippi* . We can see that New Mexico(NM) and Wyoming(WY) has high variance in the data, with NM consistently reducing the traffic fatality rate over years. However, WY reduced the fatality rate from 80's to mid 90's and had a gradual increase after. One interesting point is that the traffic fatality rate is not dependent on the state area or population - the top 2 states with size and population, *Texas* and *California*, are not among the top states in traffic fatality rate.
 
 Below, we explore how the traffic laws over the years across states, and whether they show a correlation with fatality rate. We first plot the fatality rate over years, and then plot the count of states that adopt the traffic laws, grouped by year and specific law.  We hypothesize that the fatality rate is influenced the most by drinking and overspeeding and proceed to examine the applicable laws.
@@ -215,7 +216,7 @@ Over the years, more states are adopting stricter alcohol limits. In 2004, over 
 
 Lets proceed to examine the individual state behavior in the panel. First, we'll examine how the traffic fatality rates changed over years for the first 3 States from the top and bottom of the fatality rate scale. 
 
-```{r 1 EDA3}
+```{r 1 EDA3,warning=FALSE,message=FALSE}
 #Top 3 and Bottom 3 states in overall fatality scale
 traffic.state.aggr <- data.with.name %>%   group_by(shortname) %>%   summarise_at(vars(totfat, nghtfat,wkndfat), funs(sum))
 top.3.fatalities <- traffic.state.perc.aggr %>%  filter(rank(desc(totfatrte))<=3) %>% arrange(desc(totfatrte)) %>% rename(top3states = shortname)
@@ -243,7 +244,7 @@ g.4 <- ggplot(df.transformed, aes(as.factor(gdl), totfatrte)) + geom_boxplot(aes
 grid.arrange(g.1, g.2, nrow = 1,  ncol = 2);grid.arrange(g.3, g.4, nrow = 1,  ncol = 2) 
 ```
 
-In the above graphs, seatbelt=1 indicates the the states followed the primary or secondary seatbelt laws for more than half of the year. Similar logic is applied to blood alcohol laws, Per Se and Gdl laws . *We can see that WY has lower fatality rate in the years they adopted the Per Se, Bac, and Seatbelt laws*. They have not adopted the Gdl law as of 2004. Rhode Island shows a similar pattern, eventhough the fatality rate was already low.  
+In the above graphs, seatbelt=1 indicates the the states followed the primary or secondary seatbelt laws for more than half of the year. Similar logic is applied to blood alcohol laws, Per Se and Gdl laws . *We can see that WY has lower fatality rate in the years they adopted the Per Se, Bac, and Seatbelt laws*. They have not adopted the Gdl law as of 2004. Rhode Island shows a similar pattern, eventhough the fatality rate was already low. WY also has higher variance over the years than RI regardless of the law adoption.
 
 Now we will look at how fatality rate differs between 1980 and 2004 for each state.
 ```{r 1.EDA.year80084,warning=FALSE,message=FALSE}
@@ -252,6 +253,7 @@ df.80.04 <- data.with.name %>% filter(year %in% c('1980','2004')) %>% dplyr::sel
 ggplot(df.80.04, aes(shortname, totfatrte, group = year, colour = as.factor(year))) + 
   geom_line(aes(y=totfatrte), size = 1) + ggtitle("Fatality Rates for 1980 and 2004 By State") + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) + labs(x="") + theme(plot.title = element_text(size = 10, hjust = 0.5)) + labs(color ="Year")
 ```
+
 For most of the states, fatality rate in 2004 is less than 1980 barring exceptions like *Arkansas(AR)* and *Mississippi(MS)*. States show more variance in 1980 than in 2004. 
 
 Thus both the overall and state level EDA indicates that there is a reduction in fatality rate that is consistent with traffic laws adoption. However the actual impact of the traffic laws adoption, and the demographic variables on fatality rate can be assessed only through the detailed regression analysis below.
@@ -262,12 +264,12 @@ The dependent variable *totfatrte* is defined as the total fatalities per 100,00
 
 
 ```{r 2.plot,warning=FALSE,message=FALSE}
-year.plot
+year.plot.1
 ```
 
 Let's estimate the linear regression for the dummy variables from 1981 to 2004 below. 
 
-```{r}
+```{r lm.1,warning=FALSE,message=FALSE}
 lm.fit1 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 +
                       d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 +
                       d00 + d01 + d02 + d03 + d04, data=driving.df)
@@ -294,7 +296,7 @@ Yes. *perse* variable has a statistically significant at the 95% confidence inte
 **Effect of primary seat belt law on fatality rate**   
 We are not able to find any statistically significant effect of the primary seat belt law on the fatality rate based on the regression coefficients shown below. 
 
-```{r}
+```{r lm2,warning=FALSE,message=FALSE}
 library(lmtest)
 lm.fit2 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
                 d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
@@ -322,9 +324,8 @@ For the fixed affect model, allows for correlation between unobserved fixed effe
 Fixed effect model is more reliable because it is accounting for the unobserved time-invariant variable which pooled OLS is not. 
 
 Our fixed effect model assumption is there could be correlation between the unobserved fixed effect (e.g. road conditions, percentage of rural vs urban roads, compliance to laws etc specific to state that doesn't change much over time) and explanatory variables (e.g. bac08, vehicmilespc). This assumption is reasonable because the EDA showed there is correlation between fatality rate and state, and traffic law adoption and state. 
-#TODO
 
-```{r}
+```{r plm,warning=FALSE,message=FALSE}
 # Creating a panel with 'State' and 'Year' variables.
 pnldata <- pdata.frame(driving.df, c("state", "year"))
 
@@ -336,12 +337,20 @@ summary(model.fe)
 
 ```
 
+The model is 
+$$
+totfatrte_{i} = -1.51107133d81 -3.02549578d82 -3.50360069d83 -4.25936110d84 -4.72679311d85 -3.66118539d86 -4.30578838d87  \\ 
+              -4.76712131d88 -6.12997263d89 -6.22973766d90 -6.91714040d91 -7.77417239d92 -8.09410864d93 -8.50421668d94 -8.25540198 \\
+              -8.25540198d95 -8.60661913d96 -8.70781739d97 -9.34924025d98 -9.47489124d99 -9.99185979d00 -9.63121721d01 -8.90673015d02 \\
+              -8.93650263d03 -9.33936116d04 -1.43722116bac08 -1.06266776bac10 -1.15161719perse -1.22739974sbprim -0.34970784sbsecon \\
+              -0.06253283sl70plus -0.41177619gdl +0.18712169perc14_24 -0.57183997unem +0.00094005vehicmilespc
+$$
 
 5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
 
 We will fit the random effects model to the data as shown below.
 
-```{r}
+```{r re,warning=FALSE,message=FALSE}
 
 model.re <- plm(totfatrte ~  d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
                 d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
@@ -350,8 +359,8 @@ model.re <- plm(totfatrte ~  d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89
 
 phtest(model.fe, model.re)
 ```
-#TODO add blurb on the usecases RE is applicable to and why it is not applicable here. 
-#TODO write out the model in text
+#TODO add blurb on the usecases RE is applicable to and why it is not applicable here.
+RE model assumes that the variation across entities is random and uncorrelated with the predictors in the model. EDA showed us that the differences across states are consistent over years, and institutional knowledge tells us that there are state specific factors that could be influencing the fatality rate that is omitted in the dataset - for example road conditions specific to state could be correlated to vehicmilespc. Hence the intuition is FE is better. We confirm the intuition with Hausman test.
 
 Hausman test checks whether the unique errors $u_i$ are correlated with the explanatory variables; the null hypothesis is they are not, and a lower p-value indicates that fixed effects model is better than random effects model. In the above test, p-value (2.727e-16) is statistically significant and we can reject the null hypothesis that the unobserved fixed effects are uncorrelated with the explanatory variables. Therefore, We will prefer the Fixed effect model instead of the random effects model in this scenario.
 
@@ -359,6 +368,6 @@ Hausman test checks whether the unique errors $u_i$ are correlated with the expl
 
 The coefficient for the $vehicmilespc$ variable is 0.00094005 using the FE estimates and it is highly statistically significant. In other words, There will be an increase of 0.94 fatalities per 100k for an increase of 1000 vehicle miles driven per capita.
 
-7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?
+7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?  
 #TODO read and update
 If there is Serial correlation then it will not affect the unbiasedness or consistency of OLS estimators, but it does affect their efficiency. With positive serial correlation, the OLS estimates of the standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. Much of the time serial correlation is viewed as the most important problem, because it usually has a larger impact on standard errors and the efficiency of estimators than does heteroskedasticity. The presence of heteroskedasticity, while not causing bias or inconsistency in the coefficients does invalidate the usual standard errors, t statistics, and F statistics.
