@@ -285,7 +285,7 @@ First, we looked at the predicted variable *totfatrte* for possible transformati
 
 The variables *bac08, bac10, perse, sbprim, sbsecon, sl70plus, gdl* define the year in which the specific law became effective. It ranges from 0-1 with decimals as the law could  change in the middle of the year. One possible transformation is to round the fractions into 0 or 1 - but we choose to not round them up, as we will lose precision if the law was adopted in the middle of the year. 
 
-Variables  *perc14_24, unem, vehicmilespc* are already normalized and so no transformation is necessary. Note that *vehicmilespc* is a candidate for log transformation - but because the variable is already a rate, and we lose interpretability with log transformation, we retain the original format. 
+Variables  *perc14_24, unem, vehicmilespc* are already normalized and so no transformation is necessary. Note that *vehicmilespc* is a candidate for log transformation as there is a range from 4k to 18k miles per capita and the relationship between this and fatality rate is not linear as seen from EDA - but because the variable is already a rate, and we lose interpretability with log transformation, we retain the original format. 
 
 **Definition of bac08 and bac10 variables and their interpretation**   
 *bac10* is defined as the	blood alcohol limit of .10 and *bac08* is defined as the	blood alcohol limit of .08. Both the variables *bac08* (-2.498) and *bac10* (-1.418) have  negative coefficients, with *bac08* having larger negative coefficient (thus larger impact) on reducing the fatality rate. They are statistically significant and it implies that they have a strong negative correlation to the total fatality rate. This pattern was observed in EDA where the boxplot showed lower fatality rate for *bac08* than *bac10.* The takeaway is, if we come up with a stricter law and decrease the blood alcohol limit to .08 then the fatalities rate decreases more.
@@ -339,11 +339,7 @@ summary(model.fe)
 
 The model is 
 $$
-totfatrte_{i} = -1.51107133d81 -3.02549578d82 -3.50360069d83 -4.25936110d84 -4.72679311d85 -3.66118539d86 -4.30578838d87  \\ 
-              -4.76712131d88 -6.12997263d89 -6.22973766d90 -6.91714040d91 -7.77417239d92 -8.09410864d93 -8.50421668d94 -8.25540198 \\
-              -8.25540198d95 -8.60661913d96 -8.70781739d97 -9.34924025d98 -9.47489124d99 -9.99185979d00 -9.63121721d01 -8.90673015d02 \\
-              -8.93650263d03 -9.33936116d04 -1.43722116bac08 -1.06266776bac10 -1.15161719perse -1.22739974sbprim -0.34970784sbsecon \\
-              -0.06253283sl70plus -0.41177619gdl +0.18712169perc14_24 -0.57183997unem +0.00094005vehicmilespc
+totfatrte_{i} = -1.51107133d81 -3.02549578d82 -3.50360069d83 -4.25936110d84 -4.72679311d85 -3.66118539d86 -4.30578838d87 -4.76712131d88 -6.12997263d89 -6.22973766d90 -6.91714040d91 -7.77417239d92 -8.09410864d93 -8.50421668d94 -8.25540198 -8.25540198d95 -8.60661913d96 -8.70781739d97 -9.34924025d98 -9.47489124d99 -9.99185979d00 -9.63121721d01 -8.90673015d02 -8.93650263d03 -9.33936116d04 -1.43722116bac08 -1.06266776bac10 -1.15161719perse -1.22739974sbprim -0.34970784sbsecon -0.06253283sl70plus -0.41177619gdl +0.18712169perc14_24 -0.57183997unem +0.00094005vehicmilespc
 $$
 
 5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
@@ -359,8 +355,8 @@ model.re <- plm(totfatrte ~  d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89
 
 phtest(model.fe, model.re)
 ```
-#TODO add blurb on the usecases RE is applicable to and why it is not applicable here.
-RE model assumes that the variation across entities is random and uncorrelated with the predictors in the model. EDA showed us that the differences across states are consistent over years, and institutional knowledge tells us that there are state specific factors that could be influencing the fatality rate that is omitted in the dataset - for example road conditions specific to state could be correlated to vehicmilespc. Hence the intuition is FE is better. We confirm the intuition with Hausman test.
+
+RE model assumes that the variation across entities is random and uncorrelated with the predictors in the model. EDA showed us that the differences across states are consistent over years, and institutional knowledge tells us that there are state specific factors that could be influencing the fatality rate that is omitted in the dataset - for example road conditions specific to state could be correlated to vehicmilespc. FE will clear them out by demeaning over time, but RE will not. Hence the intuition is FE is better. We confirm the intuition with Hausman test.
 
 Hausman test checks whether the unique errors $u_i$ are correlated with the explanatory variables; the null hypothesis is they are not, and a lower p-value indicates that fixed effects model is better than random effects model. In the above test, p-value (2.727e-16) is statistically significant and we can reject the null hypothesis that the unobserved fixed effects are uncorrelated with the explanatory variables. Therefore, We will prefer the Fixed effect model instead of the random effects model in this scenario.
 
@@ -369,5 +365,8 @@ Hausman test checks whether the unique errors $u_i$ are correlated with the expl
 The coefficient for the $vehicmilespc$ variable is 0.00094005 using the FE estimates and it is highly statistically significant. In other words, There will be an increase of 0.94 fatalities per 100k for an increase of 1000 vehicle miles driven per capita.
 
 7. (5%) If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors?  
-#TODO read and update
-If there is Serial correlation then it will not affect the unbiasedness or consistency of OLS estimators, but it does affect their efficiency. With positive serial correlation, the OLS estimates of the standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. Much of the time serial correlation is viewed as the most important problem, because it usually has a larger impact on standard errors and the efficiency of estimators than does heteroskedasticity. The presence of heteroskedasticity, while not causing bias or inconsistency in the coefficients does invalidate the usual standard errors, t statistics, and F statistics.
+#TODO read and update  
+If there is Serial correlation then it will not affect the unbiasedness or consistency of OLS estimators, but it does affect their efficiency. With positive serial correlation, the OLS estimates of the standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. Much of the time serial correlation is viewed as the most important problem, because it usually has a larger impact on standard errors and the efficiency of estimators than does heteroskedasticity. The presence of heteroskedasticity, while not causing bias or inconsistency in the coefficients does invalidate the usual standard errors, t statistics, and F statistics. To address this, the usual OLS standard errors, t statistics, and F statistics can be adjusted to allow for the presence of heteroskedasticity of unknown form (Heteroskedasticity-robust statistics)
+
+**Conclusion**
+Traffic fatalities from crashes in the United States substantial. Good Statistical models can identify important predictors that can help authorities to direct focus and resources, and policy analysis.
