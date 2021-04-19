@@ -28,6 +28,7 @@ library(viridis)
 library(tsibble)
 library(forecast)
 library(gridExtra)
+library(lmtest)
 ```
 
 **Exercises:**
@@ -101,6 +102,7 @@ data.with.name <- merge(data, us.states, by=c("state","state"))
 
 To start EDA, we perform univariate analyses of important variables fatality rate, unemployment, % of younger population, and vehiclemilespc to examine the distribution.
 ```{r univ,warning=FALSE,message=FALSE }
+#histograms for important variables
 totfatrte.hist <- ggplot(driving.df, aes(x = totfatrte)) +   geom_histogram(bins = 30, fill="#0072B2", colour="black") +   xlab("totfatrte") +   ylab("counts")
 unem.hist <- ggplot(driving.df, aes(x = unem)) +  geom_histogram(bins = 30, fill="#0072B2", colour="black") +   xlab("unem") +   ylab("counts")
 perc14_24.hist <- ggplot(driving.df, aes(x = perc14_24)) +  geom_histogram(bins = 30, fill="#0072B2", colour="black") + xlab("perc14_24") + ylab("counts")
@@ -112,38 +114,29 @@ The distribution looks approximately normal with some tail for $totfatrte$, $une
 
 Next, we examine the bivariate relationship between some of the important explanatory variables and fatality rate. 
 ```{r biv,warning=FALSE,message=FALSE}
-totfatrte.unem.scatter <- ggplot(driving.df, aes(unem, totfatrte)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
-totfatrte.perc14_24.scatter <- ggplot(driving.df, aes(perc14_24, totfatrte)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
-totfatrte.vehicmilespc.scatter <- ggplot(driving.df, aes(vehicmilespc, totfatrte)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
+#Scatter plots to examine linear relationship between continuous variables and totatrte
+scatter.theme <- theme(axis.text.x = element_text(angle = 90, size = 6, vjust = 0.5, hjust=1)) +
   theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
 
+totfatrte.unem.scatter <- ggplot(driving.df, aes(unem, totfatrte)) + geom_point() + geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + scatter.theme
+totfatrte.perc14_24.scatter <- ggplot(driving.df, aes(perc14_24, totfatrte)) + geom_point() + geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + scatter.theme
+totfatrte.vehicmilespc.scatter <- ggplot(driving.df, aes(vehicmilespc, totfatrte)) + geom_point() + geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + scatter.theme
+
+#Mutate to round the fractions
 driving.df.mutate <- driving.df %>% mutate(bac08 = ifelse(bac08 > 0.5,1,0)) %>% 
   mutate(bac10 = ifelse(bac10 > 0.5,1,0)) %>% mutate(perse = ifelse(perse > 0.5,1,0)) %>% 
   mutate(sl70plus = ifelse(sl70plus > 0.5,1,0)) %>% mutate(gdl = ifelse(gdl > 0.5,1,0)) %>% mutate(bacall = case_when(bac08>= 0.05 ~ 2, bac10 > 0.5 ~1, TRUE ~ 0 ))
 
-totfatrte.bac10.box <- ggplot(driving.df.mutate, aes(x = factor(bac10), y = totfatrte)) +
-  geom_boxplot(aes(fill = factor(bac10))) + xlab("bac10") + theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
+#box plots to explore relationship between mutated binary variables and totfatrte
+#common theme
+box.theme <- theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
   theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
-totfatrte.perse.box <- ggplot(driving.df.mutate, aes(x = factor(perse), y = totfatrte)) +
-  geom_boxplot(aes(fill = factor(perse))) + xlab("perse") + theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
-totfatrte.sbprim.box <- ggplot(driving.df.mutate, aes(x = factor(sbprim), y = totfatrte)) +
-  geom_boxplot(aes(fill = factor(sbprim)))+ xlab("sbprim") + theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
-totfatrte.sl70plus.box <- ggplot(driving.df.mutate, aes(x = factor(sl70plus), y = totfatrte)) +
-  geom_boxplot(aes(fill = factor(sl70plus)))+ xlab("sl70plus") + theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
-totfatrte.bacall.box <- ggplot(driving.df.mutate, aes(x = factor(bacall), y = totfatrte)) +
-  geom_boxplot(aes(fill = factor(bacall)))+ xlab("bac 1=.1,2=.08 ") + theme(axis.text.x = element_text(angle = 0, size = 6, vjust = 0.5, hjust=1)) +
-  theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") 
+
+totfatrte.bac10.box <- ggplot(driving.df.mutate, aes(x = factor(bac10), y = totfatrte)) + geom_boxplot(aes(fill = factor(bac10))) + xlab("bac10") + box.theme
+totfatrte.perse.box <- ggplot(driving.df.mutate, aes(x = factor(perse), y = totfatrte)) + geom_boxplot(aes(fill = factor(perse))) + xlab("perse")  + box.theme
+totfatrte.sbprim.box <- ggplot(driving.df.mutate, aes(x = factor(sbprim), y = totfatrte)) + geom_boxplot(aes(fill = factor(sbprim)))+ xlab("sbprim") + box.theme
+totfatrte.sl70plus.box <- ggplot(driving.df.mutate, aes(x = factor(sl70plus), y = totfatrte)) + geom_boxplot(aes(fill = factor(sl70plus)))+ xlab("sl70plus") + box.theme
+totfatrte.bacall.box <- ggplot(driving.df.mutate, aes(x = factor(bacall), y = totfatrte)) + geom_boxplot(aes(fill = factor(bacall)))+ xlab("bac 1=.1,2=.08 ") + box.theme
 grid.arrange( totfatrte.bac10.box, totfatrte.perse.box, totfatrte.sbprim.box, totfatrte.sl70plus.box, totfatrte.bacall.box, totfatrte.unem.scatter, totfatrte.perc14_24.scatter, totfatrte.vehicmilespc.scatter,  ncol = 4, nrow = 2,  top="Bivariate Analysis of key Variables")
 
 ```
@@ -156,7 +149,7 @@ Below we analyze the fatality rate change by year and overall change by state .
 
 ```{r 1 EDA.fat.by.year,warning=FALSE,message=FALSE}
 #fatality change by year 
-traffic.yearly.aggr <- data %>%   group_by(year) %>%  summarise_at(vars(totfatrte, nghtfatrte,wkndfatrte), funs(mean))
+traffic.yearly.aggr <- data %>% group_by(year) %>%  summarise_at(vars(totfatrte, nghtfatrte,wkndfatrte), funs(mean))
 
 #fatality change by state 
 traffic.state.perc.aggr <- data.with.name %>% group_by(shortname) %>% summarise_at(vars(totfatrte,nghtfatrte,wkndfatrte), funs(mean))
@@ -172,9 +165,11 @@ conditional_plot = function(data, plotvar, condvar, title) {
   g + geom_boxplot() + ggtitle(title) + theme(axis.text.x = element_text(angle = 45, size = 6, vjust = 0.5, hjust=1)) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs (x = "", y= "Fatality Rate")
 }
 
+#By Year and by State averages
 year.plot.1 <- overall_plot(traffic.yearly.aggr,traffic.yearly.aggr$year,"Average Fatality Rate by year",0) + geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
 state.plot.1 <- overall_plot(traffic.state.perc.aggr,traffic.state.perc.aggr$shortname,"Average Fatality Rate by State",90)
 
+#Box plots to examine the variance across year and state index in the panel
 cplot.1 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$year, "Fatality Rate by Year By State")
 cplot.2 <- conditional_plot(data.with.name, data.with.name$totfatrte, data.with.name$shortname, "Fatality Rate by State By Year")
 
@@ -198,12 +193,14 @@ data <- data %>%  mutate(sball = case_when(sbprim + sbsecon >= 0.5  ~ 1,TRUE ~ 0
 bac.df <- data %>% group_by(year) %>%
 summarise(bac10 = sum(bac10), bac08 = sum(bac08), bac.all = sum(bac08 + bac10), perse = sum(perse), sbprim = sum(sbprim), sbsecon = sum(sbsecon), gdl = sum(gdl), sl70plus = sum(sl70plus), totfatrte = mean(totfatrte), sball=sum(sball)) 
 
+#plot average fatality rate separately for ease of interpretation
 bac.plot.f <- ggplot(bac.df, aes(x = year)) +
   geom_line(aes(y=totfatrte, color='totfatrte'), size = 2, group = 1) + ylim(0,30)+
   scale_x_continuous(breaks = seq(min(bac.df$year), max(bac.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5)) + scale_color_manual(name = "Blood Alcohol Level", values = c( totfatrte="black")) + labs(title = "Changes in Fatality Rate Over Time", y = "Fatality Rate", x = "") + 
   annotate("text", x = 1987, y = 23, label = "Fatality Rate", size = 3, fontface = "bold") + 
    theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none")
 
+#plot and annotate the individual traffic law adoption
 bac.plot <- ggplot(bac.df, aes(x = year)) +
 geom_line(aes(y = bac.all, color='bac.all'), size = 1.5, group = 1) +   geom_line(aes(y=perse, color='perse'), size = 1.5, group = 1) + 
   geom_line(aes(y=sball, color='sball'), size = 1.5, group = 1) + geom_line(aes(y=gdl, color='gdl'), size = 1.5, group = 1) +  geom_line(aes(y = sl70plus, color='sl70plus'), size = 1.5, group = 1) + scale_x_continuous(breaks = seq(min(bac.df$year), max(bac.df$year), 1)) + theme(axis.text.x = element_text(angle = 90, vjust=0.5),axis.title=element_text(size=10)) + scale_color_manual(name = "Number of States adopting Traffic Laws By Year",
@@ -235,15 +232,19 @@ cbind(top.3.fatalities[,1:2],bottom.3.fatalities[,1:2])
 The top 3 are *Wyoming*, *New Mexico* and *Mississippi*. The bottom 3 are *Rhode Island*, *New York* and *Massachussets*. We see that the fatality rate in Wyoming is nearly 4 times as high as in Rhode Island in 2004. Below, we see the how the fatality rate varies for seat belt, bac each state across years.
 
 ```{r 1.EDA.panelplots,warning=FALSE,message=FALSE}
+#mutate to round fractions for box plots
 df.transformed <- data.merged %>%   mutate( perse = case_when(perse >= 0.5  ~ 1,TRUE ~ 0),bacat = case_when(bac10+bac08 >= 0.5  ~ 1,TRUE ~ 0), sball = case_when(sbprim + sbsecon >= 0.5  ~ 1,TRUE ~ 0 ),gdl = case_when(gdl >= 0.5  ~ 1,TRUE ~ 0 ))
 
-g.1 <- ggplot(df.transformed, aes(as.factor(perse), totfatrte)) + geom_boxplot(aes(fill = factor(perse))) + geom_jitter(width = 0.2) + ggtitle("Per Se Law vs Fatality for WY and RI") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") +labs(x="Per Se Law")
+#common functions
+fn.boxplot = function(condvar,title,xlab,ylab) {
+  g <- ggplot(df.transformed, aes(as.factor(condvar), totfatrte)) + geom_boxplot(aes(fill = factor(condvar))) + geom_jitter(width = 0.2) + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") +labs(x=xlab,y=ylab,title=title)
+}
 
-g.2 <- ggplot(df.transformed, aes(as.factor(bacat), totfatrte)) + geom_boxplot(aes(fill = factor(bacat))) + geom_jitter(width = 0.2) + ggtitle("Bac vs Fatality  for WY and RI") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs(x="Blood Alcohol Law", y="")
-
-g.3 <- ggplot(df.transformed, aes(as.factor(seatbelt), totfatrte)) + geom_boxplot(aes(fill = factor(seatbelt))) + geom_jitter(width = 0.2) + ggtitle("Seatbelt and Fatality change for WY and RI") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs(x="Seatbelt Law")
-
-g.4 <- ggplot(df.transformed, aes(as.factor(gdl), totfatrte)) + geom_boxplot(aes(fill = factor(gdl))) + geom_jitter(width = 0.2) + ggtitle("GDL vs Fatality for WY and RI") + facet_wrap(~shortname) + theme(plot.title = element_text(size = 10, hjust = 0.5)) + theme(legend.position = "none") + labs(x = "Graduate DL Law", y="")
+#box plots to compare variance between WY and RI
+g.1 <- fn.boxplot(df.transformed$perse,"Per Se Law vs Fatality for WY and RI","Per Se Law","Total Fatality Rate")
+g.2 <- fn.boxplot(df.transformed$bacat,"Bac vs Fatality  for WY and RI","Blood Alcohol Law","")
+g.3 <- fn.boxplot(df.transformed$seatbelt,"Seatbelt and Fatality change for WY and RI","Seatbelt Law","Total Fatality Rate")
+g.4 <- fn.boxplot(df.transformed$gdl,"GDL vs Fatality for WY and RI","Graduate DL Law","")
 
 grid.arrange(g.1, g.2, nrow = 1,  ncol = 2);grid.arrange(g.3, g.4, nrow = 1,  ncol = 2) 
 ```
@@ -252,6 +253,7 @@ In the above graphs, seatbelt=1 indicates the the states followed the primary or
 
 Now we will look at how fatality rate differs between 1980 and 2004 for each state.
 ```{r 1.EDA.year80084,warning=FALSE,message=FALSE}
+#dataframe for only 1980 and 2004
 df.80.04 <- data.with.name %>% filter(year %in% c('1980','2004')) %>% dplyr::select(year,shortname,totfatrte) 
 
 ggplot(df.80.04, aes(shortname, totfatrte, group = year, colour = as.factor(year))) + 
@@ -264,11 +266,13 @@ Thus both the overall and state level EDA indicates that there is a reduction in
 
 2. (15%) How is the our dependent variable of interest *totfatrte* defined? What is the average of this variable in each of the years in the time period covered in this dataset? Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004. What does this model explain? Describe what you find in this model. Did driving become safer over this period? Please provide a detailed explanation.
 
-The dependent variable *totfatrte* is defined as the total fatalities per 100,000 population, grouped by the index variables year and state. The average of this *totfatrte* variable per year is computed for EDA in variable $traffic.yearly.aggr$ and plotted using $year.plot.1$. 
+The dependent variable *totfatrte* is defined as the total fatalities per 100,000 population, grouped by the index variables year and state. The average of this *totfatrte* variable per year is computed for EDA in variable $traffic.yearly.aggr$ and plotted. 
 
 
 ```{r 2.plot,warning=FALSE,message=FALSE}
-year.plot.1
+#By Year average
+traffic.yearly.aggr <- data %>% group_by(year) %>%  summarise_at(vars(totfatrte), funs(mean))
+overall_plot(traffic.yearly.aggr,traffic.yearly.aggr$year,"Average Fatality Rate by year",0) + geom_smooth(method = "lm", formula = y ~ x, se = FALSE)
 ```
 
 Let's estimate the linear regression for the dummy variables from 1981 to 2004 below. 
@@ -301,14 +305,12 @@ Yes. *perse* variable (p-value 0.037791) has a statistically significant at the 
 Primary seatbelt has a negative coeffient (-7.533e-02) indicating that adoption of primary seatbelt reduces fatality rate. However, with a high p-value (0.878032), we are not able to find any statistically significant effect of the primary seat belt law on the fatality rate based on the regression coefficients shown below. 
 
 ```{r lm2,warning=FALSE,message=FALSE}
-library(lmtest)
+#linear model with traffic laws
 lm.fit2 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
                 d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
                 d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + 
                 perc14_24 + unem + vehicmilespc, data=driving.df)
 summary(lm.fit2)
-
-bgtest(lm.fit2)
 ```
 
 In summary, including the pertinent explanatory variables improved the model fit, as seen in the adjusted $R^2$ (0.5963) and is better than the model in Q2. 
@@ -343,7 +345,17 @@ summary(model.fe)
 
 The model is 
 $$
-totfatrte_{i} = -1.51107133d81 -3.02549578d82 -3.50360069d83 -4.25936110d84 -4.72679311d85 -3.66118539d86 -4.30578838d87 -4.76712131d88 -6.12997263d89 -6.22973766d90 -6.91714040d91 -7.77417239d92 -8.09410864d93 -8.50421668d94 -8.25540198 -8.25540198d95 -8.60661913d96 -8.70781739d97 -9.34924025d98 -9.47489124d99 -9.99185979d00 -9.63121721d01 -8.90673015d02 -8.93650263d03 -9.33936116d04 -1.43722116bac08 -1.06266776bac10 -1.15161719perse -1.22739974sbprim -0.34970784sbsecon -0.06253283sl70plus -0.41177619gdl +0.18712169perc14_24 -0.57183997unem +0.00094005vehicmilespc
+\begin{aligned}
+totfatrte_{i} = -1.43722116 * bac08 -1.06266776 * bac10 -1.15161719 * perse \\ 
+-1.22739974 * sbprim -0.34970784 * sbsecon -0.06253283 * sl70plus   \\ 
+-0.41177619 * gdl +0.18712169 * perc14_24 -0.57183997 * unem \\
+ +0.00094005 * vehicmilespc -1.51107133 * d81 -3.02549578 * d82 -3.50360069 * d83 \\ 
+ -4.25936110 * d84 -4.72679311 * d85 -3.66118539* d86 -4.30578838 * d87 \\
+ -4.76712131 * d88 -6.12997263 * d89 -6.22973766 * d90 -6.91714040 * d91 \\
+ -7.77417239 * d92 -8.09410864 * d93 -8.50421668 * d94 -8.25540198 * d95\\
+ -8.60661913 * d96-8.70781739 * d97 -9.34924025 * d98 -9.47489124 * d99 \\
+  -9.99185979 * d00 -9.63121721 * d01 -8.90673015 * d02 -8.93650263 * d03 -9.33936116 * d04 
+\end{aligned}
 $$
 
 5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.

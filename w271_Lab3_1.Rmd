@@ -93,6 +93,7 @@ It will be useful to add more context around the state information, in addition 
 #get state name 
 us.states = read.csv("usstates.csv", header = TRUE, sep = ",", dec = ".")
 data.with.name <- merge(data, us.states, by=c("state","state"))
+data.with.name %>% filter(shortname %in% c("WY","NM","MS") ) %>% filter(year == '1980') %>% dplyr::select(shortname,perse,bac08,bac10,seatbelt,sl70plus)
 ```
 
 To start EDA, we perform univariate analyses of important variables fatality rate, unemployment, % of younger population, and vehiclemilespc to examine the distribution.
@@ -267,7 +268,7 @@ Let's estimating the linear regression for the dummy variables from 1981 to 2004
 ```{r}
 lm.fit1 <- lm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 +
                       d90 + d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 +
-                      d00 + d01 + d02 + d03 + d04, data=driving.df)
+                      d00 + d01 + d02 + d03 + d04 , data=driving.df)
 summary(lm.fit1)
 ```
 
@@ -301,8 +302,17 @@ pnldata <- pdata.frame(driving.df, c("state", "year"))
 model.fe <- plm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
                 d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
                 d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + 
-                perc14_24 + unem + vehicmilespc, data=pnldata, model = "within")
+                perc14_24 + unem + log(vehicmilespc), data=pnldata, model = "within")
 summary(model.fe)
+
+model.random <- plm(totfatrte ~ d81 + d82 + d83 + d84 + d85 + d86 + d87 + d88 + d89 + d90 + 
+                d91 + d92 + d93 + d94 + d95 + d96 + d97 + d98 + d99 + d00 + d01 + d02 + 
+                d03 + d04 + bac08 + bac10 + perse + sbprim + sbsecon + sl70plus + gdl + 
+                perc14_24 + unem + log(vehicmilespc), data=pnldata, model = "random")
+summary(model.random)
+
+
+phtest(model.fe, model.random)
 
 ```
 
