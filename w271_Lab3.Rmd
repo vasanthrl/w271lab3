@@ -346,18 +346,18 @@ summary(model.fe)
 The model is 
 $$
 \begin{aligned}
-totfatrte_{i} = -1.43722116 * bac08 -1.06266776 * bac10 -1.15161719 * perse \\ 
--1.22739974 * sbprim -0.34970784 * sbsecon -0.06253283 * sl70plus   \\ 
--0.41177619 * gdl +0.18712169 * perc14_24 -0.57183997 * unem \\
- +0.00094005 * vehicmilespc -1.51107133 * d81 -3.02549578 * d82 -3.50360069 * d83 \\ 
- -4.25936110 * d84 -4.72679311 * d85 -3.66118539* d86 -4.30578838 * d87 \\
- -4.76712131 * d88 -6.12997263 * d89 -6.22973766 * d90 -6.91714040 * d91 \\
- -7.77417239 * d92 -8.09410864 * d93 -8.50421668 * d94 -8.25540198 * d95\\
- -8.60661913 * d96-8.70781739 * d97 -9.34924025 * d98 -9.47489124 * d99 \\
-  -9.99185979 * d00 -9.63121721 * d01 -8.90673015 * d02 -8.93650263 * d03 -9.33936116 * d04 
+totfatrte_{i} = -1.44 * bac08 -1.06 * bac10 -1.15 * perse \\
+-1.23 * sbprim -0.35 * sbsecon -0.06 * sl70plus   \\
+-0.41 * gdl +0.19 * perc14_24 -0.57 * unem \\
+ +0.0009 * vehicmilespc -1.51 * d81 -3.03 * d82 -3.5 * d83 \\
+ -4.26 * d84 -4.73 * d85 -3.66 * d86 -4.31 * d87 \\
+ -4.77 * d88 -6.13 * d89 -6.23 * d90 -6.92 * d91 \\
+ -7.77 * d92 -8.09 * d93 -8.50 * d94 -8.26 * d95\\
+ -8.61 * d96 -8.71 * d97 -9.35 * d98 -9.47 * d99 \\
+ -9.99 * d00 -9.63 * d01 -8.91 * d02 -8.94 * d03 -9.34 * d04
 \end{aligned}
 $$
-
+ 
 5. (10%) Would you perfer to use a random effects model instead of the fixed effects model you built in *Exercise 4*? Please explain.
 
 We will fit the random effects model to the data as shown below.
@@ -384,5 +384,6 @@ The coefficient for the $vehicmilespc$ variable is 0.00094005 using the FE estim
 
 If there is Serial correlation then it will not affect the unbiasedness or consistency of OLS estimators, but it does affect their efficiency. With positive serial correlation, the OLS estimates of the standard errors will be smaller than the true standard errors. This will lead to the conclusion that the parameter estimates are more precise than they really are. There will be a tendency to reject the null hypothesis when it should not be rejected. Much of the time serial correlation is viewed as the most important problem, because it usually has a larger impact on standard errors and the efficiency of estimators than does heteroskedasticity. The presence of heteroskedasticity, while not causing bias or inconsistency in the coefficients does invalidate the usual standard errors, t statistics, and F statistics. To address this, the usual OLS standard errors, t statistics, and F statistics can be adjusted to allow for the presence of serial correlation or heteroskedasticity (Heteroskedasticity-and autocorrelation-robust statistics).
 
-**Conclusion**
+**Conclusion**  
+
 In summary, changes in traffic laws decreased traffic fatality. In particular, stricter blood alcohol limit, primary seatbelt and per se laws are most effective in reducing fatality. State policy makers should take steps to enact the laws uniformly across states and ensure compliance.
